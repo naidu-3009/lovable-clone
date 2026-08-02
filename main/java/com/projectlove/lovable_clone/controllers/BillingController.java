@@ -7,7 +7,9 @@ import com.projectlove.lovable_clone.dto.subscription.CheckoutRequest;
 import com.projectlove.lovable_clone.dto.subscription.CheckoutResponse;
 import com.projectlove.lovable_clone.dto.subscription.PlanResponse;
 import com.projectlove.lovable_clone.dto.subscription.PortalResponse;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,9 +17,10 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@FieldDefaults(makeFinal = true,level = AccessLevel.PRIVATE)
 public class BillingController {
-    private final PlanService planService;
-    private final SubscriptionService subscriptionService;
+     PlanService planService;
+     SubscriptionService subscriptionService;
 
     @GetMapping("/api/plans")
     public ResponseEntity<List<PlanResponse>> getAllPlans(){
@@ -43,6 +46,4 @@ public class BillingController {
         Long userId=1L;
         return ResponseEntity.ok(subscriptionService.openCustomerPortal(userId));
     }
-
-
 }
