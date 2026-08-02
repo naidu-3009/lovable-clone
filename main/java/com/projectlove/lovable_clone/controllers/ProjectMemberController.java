@@ -24,7 +24,7 @@ public class ProjectMemberController {
       ProjectMemberService projectMemberService;
 
    @GetMapping
-    public ResponseEntity<List<ProjectMember>> getProjectMembers(@PathVariable Long projectId){
+    public ResponseEntity<List<MemberResponse>> getProjectMembers(@PathVariable Long projectId){
        Long userId=1L;
        return ResponseEntity.ok(projectMemberService.getProjectMembers(projectId,userId));
    }
