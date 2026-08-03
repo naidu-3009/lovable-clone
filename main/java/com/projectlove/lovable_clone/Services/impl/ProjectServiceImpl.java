@@ -37,8 +37,8 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse getUserProjectById(Long id, Long userId) {
-        Project project= getUserProjectByIdInternal(id,userId);
+    public ProjectResponse getUserProjectById(Long projectId, Long userId) {
+        Project project= getUserProjectByIdInternal(projectId,userId);
         return projectMapper.toProjectResponse(project);
 
 
@@ -53,8 +53,8 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse updateProject(Long id, ProjectRequest request, Long userId) {
-        Project project=getUserProjectByIdInternal(id,userId);
+    public ProjectResponse updateProject(Long projectId, ProjectRequest request, Long userId) {
+        Project project=getUserProjectByIdInternal(projectId,userId);
 
         if(!project.getOwner().getId().equals(userId)){
             throw new RuntimeException("You are not allowed to delete this project");
@@ -67,8 +67,8 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public void softDelete(Long id, Long userId) {
-        Project project=getUserProjectByIdInternal(id,userId);
+    public void softDelete(Long projectId, Long userId) {
+        Project project=getUserProjectByIdInternal(projectId,userId);
         if(!project.getOwner().getId().equals(userId)){
             throw new RuntimeException("You are not allowed to delete this project");
         }
@@ -78,8 +78,8 @@ public class ProjectServiceImpl implements ProjectService {
 
 
     //internal use
-    private Project getUserProjectByIdInternal(Long id,Long userId){
-        Project project= projectRepository.findAllAccessibleByUserId(id,userId).orElseThrow();
+    private Project getUserProjectByIdInternal(Long projectId,Long userId){
+        Project project= projectRepository.findAllAccessibleByUserId(projectId,userId).orElseThrow();
         return project;
     }
 
