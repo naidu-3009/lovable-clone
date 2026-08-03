@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.swing.text.html.Option;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,7 +37,11 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse getUserProjectById(Long id, Long userId) { return null;
+    public ProjectResponse getUserProjectById(Long id, Long userId) {
+        Project project= getUserProjectByIdInternal(id,userId);
+        return projectMapper.toProjectResponse(project);
+
+
     }
 
     @Override
@@ -49,11 +54,33 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectResponse updateProject(Long id, ProjectRequest request, Long userId) {
-        return null;
+        Project project=getUserProjectByIdInternal(id,userId);
+
+        if(!project.getOwner().getId().equals(userId)){
+            throw new RuntimeException("You are not allowed to delete this project");
+        }
+
+        project.setName(request.name());
+//        projectRepository.save(project);(we can ignore this line cuz if we add @transactional tag it dirtychecks and updates the db) but no harm in writing
+        projectRepository.save(project);
+        return projectMapper.toProjectResponse(project);
     }
 
     @Override
     public void softDelete(Long id, Long userId) {
-
+        Project project=getUserProjectByIdInternal(id,userId);
+        if(!project.getOwner().getId().equals(userId)){
+            throw new RuntimeException("You are not allowed to delete this project");
+        }
+        project.setDeletedAt(Instant.now());
+        projectRepository.save(project);
     }
+
+
+    //internal use
+    private Project getUserProjectByIdInternal(Long id,Long userId){
+        Project project= projectRepository.findAllAccessibleByUserId(id,userId).orElseThrow();
+        return project;
+    }
+
 }
