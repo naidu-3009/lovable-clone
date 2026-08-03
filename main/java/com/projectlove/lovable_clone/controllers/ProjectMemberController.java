@@ -5,7 +5,6 @@ import com.projectlove.lovable_clone.Services.ProjectMemberService;
 import com.projectlove.lovable_clone.dto.member.InviteMemberRequest;
 import com.projectlove.lovable_clone.dto.member.MemberResponse;
 import com.projectlove.lovable_clone.dto.member.updateRoleRequest;
-import com.projectlove.lovable_clone.entity.ProjectMember;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -49,12 +48,13 @@ public class ProjectMemberController {
    }
 
    @DeleteMapping("/{memberId}")
-    public ResponseEntity<MemberResponse> deleteMemberRole(
+    public ResponseEntity<Void> deleteMemberRole(
             @PathVariable Long projectId,
             @PathVariable Long memberId
    ){
        Long userId=1L;
-       return ResponseEntity.ok(projectMemberService.deleteProjectMember(projectId,memberId,userId));
+       projectMemberService.removeProjectMember(projectId,memberId,userId);
+       return ResponseEntity.noContent().build();
    }
 
 }
