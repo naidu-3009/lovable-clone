@@ -32,18 +32,18 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public List<ProjectSummaryResponse> getUserProjects(Long userId) {
-        return List.of();
+        return projectMapper.toListOfProjectSummaryResponse(projectRepository.findAllAccessibleByUser(userId));
     }
 
     @Override
-    public ProjectResponse getUserProjectById(Long id, Long userId) {
-        return null;
+    public ProjectResponse getUserProjectById(Long id, Long userId) { return null;
     }
 
     @Override
     public ProjectResponse createProject(ProjectRequest request, Long userId) {
         User owner=userRepository.findById(userId).orElseThrow();
-        Project project=Project.builder().name(request.name()).owner(owner).build();
+        Project project=Project.builder().name(request.name()).owner(owner).isPublic(false).build();
+        project = projectRepository.save(project);
         return projectMapper.toProjectResponse(project);
     }
 

@@ -1,5 +1,6 @@
 package com.projectlove.lovable_clone.entity;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
