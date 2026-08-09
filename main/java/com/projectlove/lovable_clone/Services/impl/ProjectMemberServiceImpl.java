@@ -4,7 +4,7 @@ import com.projectlove.lovable_clone.Services.ProjectMemberService;
 import com.projectlove.lovable_clone.dto.member.InviteMemberRequest;
 import com.projectlove.lovable_clone.dto.member.MemberResponse;
 import com.projectlove.lovable_clone.dto.member.updateRoleRequest;
-import com.projectlove.lovable_clone.entity.*;
+//import com.projectlove.lovable_clone.entity.*;
 import com.projectlove.lovable_clone.entity.Project;
 import com.projectlove.lovable_clone.entity.ProjectMember;
 import com.projectlove.lovable_clone.entity.ProjectMemberId;
@@ -85,7 +85,7 @@ memberResponseList.addAll(projectMemberRepository.findByProjectId(projectId).str
     }
 
     @Override
-    public Void removeProjectMember(Long projectId, Long memberId, Long userId) {
+    public void removeProjectMember(Long projectId, Long memberId, Long userId) {
         Project project=getUserProjectByIdInternal(projectId,userId);
 
         if(!project.getOwner().getId().equals(userId))
@@ -97,6 +97,7 @@ memberResponseList.addAll(projectMemberRepository.findByProjectId(projectId).str
             throw new RuntimeException("the member doesnt even exits,hence cant delete");
         }
         projectMemberRepository.deleteById(projectMemberId);
+        return ;
     }
 
     //internal use
