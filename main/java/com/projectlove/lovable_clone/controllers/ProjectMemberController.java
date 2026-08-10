@@ -5,6 +5,7 @@ import com.projectlove.lovable_clone.Services.ProjectMemberService;
 import com.projectlove.lovable_clone.dto.member.InviteMemberRequest;
 import com.projectlove.lovable_clone.dto.member.MemberResponse;
 import com.projectlove.lovable_clone.dto.member.updateRoleRequest;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -31,7 +32,7 @@ public class ProjectMemberController {
    @PostMapping
     public ResponseEntity<MemberResponse> inviteMember(
             @PathVariable Long projectId,
-            @RequestBody InviteMemberRequest request
+            @RequestBody @Valid InviteMemberRequest request
    ){
        Long userId=1L;
        return ResponseEntity.status(HttpStatus.CREATED).body(projectMemberService.inviteMember(projectId,request,userId));
@@ -41,7 +42,7 @@ public class ProjectMemberController {
     public ResponseEntity<MemberResponse> updateMemberRole(
             @PathVariable Long projectId,
             @PathVariable Long memberId,
-            @RequestBody updateRoleRequest request
+            @RequestBody  @Valid updateRoleRequest request
    ){
        Long userId=1L;
        return ResponseEntity.ok(projectMemberService.updateMemberRole(projectId,memberId,request,userId));

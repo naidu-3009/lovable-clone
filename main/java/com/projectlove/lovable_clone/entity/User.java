@@ -25,12 +25,11 @@ public class User {
     Long id;
 
 
-    @Column(name = "email")
-    String  email;
+    @Column(name = "username")
+    String  username;
 
-    String password_hash;
+    String password;
     String name;
-    String avatarUrl;
 
 
     @CreationTimestamp

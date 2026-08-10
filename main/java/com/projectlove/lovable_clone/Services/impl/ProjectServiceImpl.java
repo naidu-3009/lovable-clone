@@ -5,21 +5,24 @@ import com.projectlove.lovable_clone.dto.projects.ProjectRequest;
 import com.projectlove.lovable_clone.dto.projects.ProjectResponse;
 import com.projectlove.lovable_clone.dto.projects.ProjectSummaryResponse;
 import com.projectlove.lovable_clone.entity.Project;
+import com.projectlove.lovable_clone.entity.ProjectMember;
+import com.projectlove.lovable_clone.entity.ProjectMemberId;
 import com.projectlove.lovable_clone.entity.User;
+import com.projectlove.lovable_clone.enums.ProjectMemberRole;
+import com.projectlove.lovable_clone.error.ResourceNotFoundException;
 import com.projectlove.lovable_clone.mapper.ProjectMapper;
+import com.projectlove.lovable_clone.repository.ProjectMemberRepository;
 import com.projectlove.lovable_clone.repository.ProjectRepository;
 import com.projectlove.lovable_clone.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
-import javax.swing.text.html.Option;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 
 @Service
@@ -30,6 +33,7 @@ public class ProjectServiceImpl implements ProjectService {
     ProjectRepository projectRepository;
     UserRepository userRepository;
     ProjectMapper projectMapper;
+    ProjectMemberRepository projectMemberRepository;
 
     @Override
     public List<ProjectSummaryResponse> getUserProjects(Long userId) {
@@ -46,19 +50,23 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectResponse createProject(ProjectRequest request, Long userId) {
-        User owner=userRepository.findById(userId).orElseThrow();
-        Project project=Project.builder().name(request.name()).owner(owner).isPublic(false).build();
+        User owner=userRepository.findById(userId).orElseThrow(
+                ()->new ResourceNotFoundException("user id not found",userId.toString())
+        );
+        Project project=Project.builder().name(request.name()).isPublic(false).build();
         project = projectRepository.save(project);
+        ProjectMemberId projectMemberId=new ProjectMemberId(project.getId(),userId);
+
+             ProjectMember projectMember=ProjectMember.builder().projectMemberRole(ProjectMemberRole.OWNER).user(owner).acceptedAt(Instant.now()).invitedAt(Instant.now()).projectMemberId(projectMemberId).project(project).build();
+         projectMemberRepository.save(projectMember);
         return projectMapper.toProjectResponse(project);
+
     }
 
     @Override
     public ProjectResponse updateProject(Long projectId, ProjectRequest request, Long userId) {
         Project project=getUserProjectByIdInternal(projectId,userId);
 
-        if(!project.getOwner().getId().equals(userId)){
-            throw new RuntimeException("You are not allowed to delete this project");
-        }
 
         project.setName(request.name());
 //        projectRepository.save(project);(we can ignore this line cuz if we add @transactional tag it dirtychecks and updates the db) but no harm in writing
@@ -69,9 +77,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public void softDelete(Long projectId, Long userId) {
         Project project=getUserProjectByIdInternal(projectId,userId);
-        if(!project.getOwner().getId().equals(userId)){
-            throw new RuntimeException("You are not allowed to delete this project");
-        }
+
         project.setDeletedAt(Instant.now());
         projectRepository.save(project);
     }
@@ -79,7 +85,8 @@ public class ProjectServiceImpl implements ProjectService {
 
     //internal use
     private Project getUserProjectByIdInternal(Long projectId,Long userId){
-        Project project= projectRepository.findAllAccessibleByUserId(projectId,userId).orElseThrow();
+        Project project= projectRepository.findAllAccessibleByUserId(projectId,userId).orElseThrow(()->{return new ResourceNotFoundException("Project",projectId.toString());
+        });
         return project;
     }
 

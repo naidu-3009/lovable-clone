@@ -36,24 +36,16 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
     @Override
     public List<MemberResponse> getProjectMembers(Long projectId, Long userId) {
-
         Project project=getUserProjectByIdInternal(projectId,userId);
-       List<MemberResponse> memberResponseList = new ArrayList<MemberResponse>();
-        memberResponseList.add(projectMemberMapper.toMemberResponseFromOwner(project.getOwner()));//first we added owner and then we are adding each member into the list
-
-memberResponseList.addAll(projectMemberRepository.findByProjectId(projectId).stream().map(projectMemberMapper::toMemberResponseFromMember).toList());
-        return memberResponseList;
+        return projectMemberRepository.findByProjectId(projectId).stream().map(projectMemberMapper::toMemberResponseFromMember).toList();
     }
 
 
     @Override
-    public MemberResponse inviteMember(Long projectId, InviteMemberRequest request, Long userId) {
+    public MemberResponse inviteMember(Long projectId, InviteMemberRequest request, Long userId) throws RuntimeException{
         Project project = getUserProjectByIdInternal(projectId,userId);
 
-        if(!project.getOwner().getId().equals(userId))
-            throw new RuntimeException("you are not the owner,hence cant invite others");
-
-        User invitee=userRepository.findByEmail(request.email()).orElseThrow();
+        User invitee=userRepository.findByUsername(request.username()).orElseThrow();
 
         if(invitee.getId().equals(userId))
             throw new RuntimeException("you are not allowed to invite yourself");
@@ -73,9 +65,6 @@ memberResponseList.addAll(projectMemberRepository.findByProjectId(projectId).str
     public MemberResponse updateMemberRole(Long projectId, Long memberId, updateRoleRequest request, Long userId) {
         Project project=getUserProjectByIdInternal(projectId,userId);
 
-        if(!project.getOwner().getId().equals(userId))
-            throw new RuntimeException("you are not the owner,hence cant edit other's roles");
-
         ProjectMemberId projectMemberId=new ProjectMemberId(projectId,memberId);
         ProjectMember projectMember=projectMemberRepository.findById(projectMemberId).orElseThrow();
 
@@ -88,8 +77,6 @@ memberResponseList.addAll(projectMemberRepository.findByProjectId(projectId).str
     public void removeProjectMember(Long projectId, Long memberId, Long userId) {
         Project project=getUserProjectByIdInternal(projectId,userId);
 
-        if(!project.getOwner().getId().equals(userId))
-            throw new RuntimeException("you are not the owner,hence cant edit other's roles");
 
         ProjectMemberId projectMemberId=new ProjectMemberId(projectId,memberId);
 

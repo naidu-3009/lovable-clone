@@ -9,9 +9,8 @@ import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+@Mapper(componentModel = "spring")
 public interface ProjectMapper {
-    @Mapping(source = "owner.id", target = "owner.userId")
     ProjectResponse toProjectResponse(Project project);
 
     @Mapping(source = "id", target = "projectId")

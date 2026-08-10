@@ -4,7 +4,7 @@ import com.projectlove.lovable_clone.enums.ProjectMemberRole;
 
 public record MemberResponse(
         Long userId,
-        String email,
+        String username,
         String name,
         String avatarUrl,
         ProjectMemberRole projectMemberRole,
