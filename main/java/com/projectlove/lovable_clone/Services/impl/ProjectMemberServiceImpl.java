@@ -13,6 +13,7 @@ import com.projectlove.lovable_clone.mapper.ProjectMemberMapper;
 import com.projectlove.lovable_clone.repository.ProjectMemberRepository;
 import com.projectlove.lovable_clone.repository.ProjectRepository;
 import com.projectlove.lovable_clone.repository.UserRepository;
+import com.projectlove.lovable_clone.security.AuthUtil;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -33,17 +34,20 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     ProjectRepository projectRepository;
     ProjectMemberMapper projectMemberMapper;
     UserRepository userRepository;
+    AuthUtil authUtil;
 
     @Override
-    public List<MemberResponse> getProjectMembers(Long projectId, Long userId) {
-        Project project=getUserProjectByIdInternal(projectId,userId);
+    public List<MemberResponse> getProjectMembers(Long projectId) {
+        Long userId= authUtil.getCurrentUserId();
+        Project project=getUserProjectByIdInternal(projectId);
         return projectMemberRepository.findByProjectId(projectId).stream().map(projectMemberMapper::toMemberResponseFromMember).toList();
     }
 
 
     @Override
-    public MemberResponse inviteMember(Long projectId, InviteMemberRequest request, Long userId) throws RuntimeException{
-        Project project = getUserProjectByIdInternal(projectId,userId);
+    public MemberResponse inviteMember(Long projectId, InviteMemberRequest request) throws RuntimeException{
+        Long userId= authUtil.getCurrentUserId();
+        Project project = getUserProjectByIdInternal(projectId);
 
         User invitee=userRepository.findByUsername(request.username()).orElseThrow();
 
@@ -62,8 +66,9 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     }
 
     @Override
-    public MemberResponse updateMemberRole(Long projectId, Long memberId, updateRoleRequest request, Long userId) {
-        Project project=getUserProjectByIdInternal(projectId,userId);
+    public MemberResponse updateMemberRole(Long projectId, Long memberId, updateRoleRequest request) {
+        Long userId= authUtil.getCurrentUserId();
+        Project project=getUserProjectByIdInternal(projectId);
 
         ProjectMemberId projectMemberId=new ProjectMemberId(projectId,memberId);
         ProjectMember projectMember=projectMemberRepository.findById(projectMemberId).orElseThrow();
@@ -74,8 +79,9 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     }
 
     @Override
-    public void removeProjectMember(Long projectId, Long memberId, Long userId) {
-        Project project=getUserProjectByIdInternal(projectId,userId);
+    public void removeProjectMember(Long projectId, Long memberId) {
+        Long userId= authUtil.getCurrentUserId();
+        Project project=getUserProjectByIdInternal(projectId);
 
 
         ProjectMemberId projectMemberId=new ProjectMemberId(projectId,memberId);
@@ -88,8 +94,8 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     }
 
     //internal use
-    private Project getUserProjectByIdInternal(Long projectId, Long userId){
-
+    private Project getUserProjectByIdInternal(Long projectId){
+        Long userId= authUtil.getCurrentUserId();
         Project project= projectRepository.findAllAccessibleByUserId(projectId,userId).orElseThrow();
         return project;
     }

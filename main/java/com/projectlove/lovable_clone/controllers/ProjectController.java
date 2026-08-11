@@ -4,6 +4,7 @@ import com.projectlove.lovable_clone.Services.ProjectService;
 import com.projectlove.lovable_clone.dto.projects.ProjectRequest;
 import com.projectlove.lovable_clone.dto.projects.ProjectResponse;
 import com.projectlove.lovable_clone.dto.projects.ProjectSummaryResponse;
+import com.projectlove.lovable_clone.security.AuthUtil;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -20,37 +21,34 @@ import java.util.List;
 @FieldDefaults(makeFinal = true,level = AccessLevel.PRIVATE)
 public class ProjectController {
      ProjectService projectService;
+     AuthUtil authUtil;
 
     @GetMapping
     public ResponseEntity<List<ProjectSummaryResponse>> getMyProjects(){
-        Long userId=1L;
-        return ResponseEntity.ok(projectService.getUserProjects(userId));
+
+        return ResponseEntity.ok(projectService.getUserProjects());
     }
 
     @GetMapping("/{projectId}")
     public ResponseEntity<ProjectResponse> getProjectById(@PathVariable Long projectId){
-        Long userId=1L;
-        return ResponseEntity.ok(projectService.getUserProjectById(projectId,userId));
+        return ResponseEntity.ok(projectService.getUserProjectById(projectId));
     }
 
 
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@RequestBody @Valid ProjectRequest request){
-        Long userId =1L;
-        return ResponseEntity.status(HttpStatus.CREATED).body(projectService.createProject(request,userId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(projectService.createProject(request));
     }
 
 
     @PatchMapping("/{projectId}")
     public  ResponseEntity<ProjectResponse> updateProject(@PathVariable Long projectId,@RequestBody @Valid ProjectRequest request){
-        Long userId=1L;
-        return ResponseEntity.ok(projectService.updateProject(projectId, request,userId));
+        return ResponseEntity.ok(projectService.updateProject(projectId, request));
     }
 
     @DeleteMapping("/{projectId}")
     public ResponseEntity<Void> deleteProject(@PathVariable Long projectId){
-        Long userId=1L;
-        projectService.softDelete(projectId,userId);
+        projectService.softDelete(projectId);
         return ResponseEntity.noContent().build();
 
     }

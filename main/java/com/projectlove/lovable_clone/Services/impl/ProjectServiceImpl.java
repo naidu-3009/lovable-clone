@@ -14,6 +14,7 @@ import com.projectlove.lovable_clone.mapper.ProjectMapper;
 import com.projectlove.lovable_clone.repository.ProjectMemberRepository;
 import com.projectlove.lovable_clone.repository.ProjectRepository;
 import com.projectlove.lovable_clone.repository.UserRepository;
+import com.projectlove.lovable_clone.security.AuthUtil;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -34,22 +35,26 @@ public class ProjectServiceImpl implements ProjectService {
     UserRepository userRepository;
     ProjectMapper projectMapper;
     ProjectMemberRepository projectMemberRepository;
+    AuthUtil authUtil;
 
     @Override
-    public List<ProjectSummaryResponse> getUserProjects(Long userId) {
+    public List<ProjectSummaryResponse> getUserProjects() {
+        Long userId= authUtil.getCurrentUserId();
         return projectMapper.toListOfProjectSummaryResponse(projectRepository.findAllAccessibleByUser(userId));
     }
 
     @Override
-    public ProjectResponse getUserProjectById(Long projectId, Long userId) {
-        Project project= getUserProjectByIdInternal(projectId,userId);
+    public ProjectResponse getUserProjectById(Long projectId) {
+        Long userId= authUtil.getCurrentUserId();
+        Project project= getUserProjectByIdInternal(projectId);
         return projectMapper.toProjectResponse(project);
 
 
     }
 
     @Override
-    public ProjectResponse createProject(ProjectRequest request, Long userId) {
+    public ProjectResponse createProject(ProjectRequest request) {
+        Long userId= authUtil.getCurrentUserId();
         User owner=userRepository.findById(userId).orElseThrow(
                 ()->new ResourceNotFoundException("user id not found",userId.toString())
         );
@@ -64,9 +69,9 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse updateProject(Long projectId, ProjectRequest request, Long userId) {
-        Project project=getUserProjectByIdInternal(projectId,userId);
-
+    public ProjectResponse updateProject(Long projectId, ProjectRequest request) {
+        Long userId= authUtil.getCurrentUserId();
+        Project project=getUserProjectByIdInternal(projectId);
 
         project.setName(request.name());
 //        projectRepository.save(project);(we can ignore this line cuz if we add @transactional tag it dirtychecks and updates the db) but no harm in writing
@@ -75,8 +80,9 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public void softDelete(Long projectId, Long userId) {
-        Project project=getUserProjectByIdInternal(projectId,userId);
+    public void softDelete(Long projectId) {
+        Long userId= authUtil.getCurrentUserId();
+        Project project=getUserProjectByIdInternal(projectId);
 
         project.setDeletedAt(Instant.now());
         projectRepository.save(project);
@@ -84,7 +90,8 @@ public class ProjectServiceImpl implements ProjectService {
 
 
     //internal use
-    private Project getUserProjectByIdInternal(Long projectId,Long userId){
+    private Project getUserProjectByIdInternal(Long projectId){
+        Long userId= authUtil.getCurrentUserId();
         Project project= projectRepository.findAllAccessibleByUserId(projectId,userId).orElseThrow(()->{return new ResourceNotFoundException("Project",projectId.toString());
         });
         return project;
