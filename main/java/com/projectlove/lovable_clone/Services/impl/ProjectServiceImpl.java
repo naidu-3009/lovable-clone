@@ -19,6 +19,7 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
@@ -44,16 +45,15 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    @PreAuthorize("@security.canViewProject(#projectId)")
     public ProjectResponse getUserProjectById(Long projectId) {
         Long userId= authUtil.getCurrentUserId();
         Project project= getUserProjectByIdInternal(projectId);
         return projectMapper.toProjectResponse(project);
-
-
     }
 
     @Override
-    public ProjectResponse createProject(ProjectRequest request) {
+        public ProjectResponse createProject(ProjectRequest request) {
         Long userId= authUtil.getCurrentUserId();
         User owner=userRepository.findById(userId).orElseThrow(
                 ()->new ResourceNotFoundException("user id not found",userId.toString())
@@ -61,14 +61,14 @@ public class ProjectServiceImpl implements ProjectService {
         Project project=Project.builder().name(request.name()).isPublic(false).build();
         project = projectRepository.save(project);
         ProjectMemberId projectMemberId=new ProjectMemberId(project.getId(),userId);
-
-             ProjectMember projectMember=ProjectMember.builder().projectMemberRole(ProjectMemberRole.OWNER).user(owner).acceptedAt(Instant.now()).invitedAt(Instant.now()).projectMemberId(projectMemberId).project(project).build();
+        ProjectMember projectMember=ProjectMember.builder().projectMemberRole(ProjectMemberRole.OWNER).user(owner).acceptedAt(Instant.now()).invitedAt(Instant.now()).projectMemberId(projectMemberId).project(project).build();
          projectMemberRepository.save(projectMember);
         return projectMapper.toProjectResponse(project);
 
     }
 
     @Override
+    @PreAuthorize("@security.canEditProject(#projectId)")
     public ProjectResponse updateProject(Long projectId, ProjectRequest request) {
         Long userId= authUtil.getCurrentUserId();
         Project project=getUserProjectByIdInternal(projectId);
@@ -80,10 +80,10 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    @PreAuthorize("@security.canDeleteProject(#projectId)")
     public void softDelete(Long projectId) {
         Long userId= authUtil.getCurrentUserId();
         Project project=getUserProjectByIdInternal(projectId);
-
         project.setDeletedAt(Instant.now());
         projectRepository.save(project);
     }

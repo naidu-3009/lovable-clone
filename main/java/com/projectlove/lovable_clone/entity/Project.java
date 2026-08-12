@@ -30,9 +30,6 @@ public class Project {
     @Column(nullable = false)
     String name;
 
-
-
-
     Boolean isPublic;
 
     @CreationTimestamp
@@ -42,6 +39,4 @@ public class Project {
     Instant updatedAt;
 
     Instant deletedAt;
-
-
 }

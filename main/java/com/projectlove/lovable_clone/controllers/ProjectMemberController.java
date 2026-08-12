@@ -37,7 +37,7 @@ public class ProjectMemberController {
        return ResponseEntity.status(HttpStatus.CREATED).body(projectMemberService.inviteMember(projectId,request));
    }
 
-   @PatchMapping("/{memberId}")
+   @PatchMapping("/{memberId}") //pass userid here in place of memberid
     public ResponseEntity<MemberResponse> updateMemberRole(
             @PathVariable Long projectId,
             @PathVariable Long memberId,
@@ -46,7 +46,7 @@ public class ProjectMemberController {
        return ResponseEntity.ok(projectMemberService.updateMemberRole(projectId,memberId,request));
    }
 
-   @DeleteMapping("/{memberId}")
+   @DeleteMapping("/{memberId}")//pass userid here in place of memberid
     public ResponseEntity<Void> deleteMemberRole(
             @PathVariable Long projectId,
             @PathVariable Long memberId

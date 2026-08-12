@@ -18,6 +18,7 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -37,6 +38,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     AuthUtil authUtil;
 
     @Override
+    @PreAuthorize("@security.canViewMembers(#projectId)")
     public List<MemberResponse> getProjectMembers(Long projectId) {
         Long userId= authUtil.getCurrentUserId();
         Project project=getUserProjectByIdInternal(projectId);
@@ -45,6 +47,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
 
 
     @Override
+    @PreAuthorize(("@security.canManageMembers(#projectId)"))
     public MemberResponse inviteMember(Long projectId, InviteMemberRequest request) throws RuntimeException{
         Long userId= authUtil.getCurrentUserId();
         Project project = getUserProjectByIdInternal(projectId);
@@ -54,7 +57,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
         if(invitee.getId().equals(userId))
             throw new RuntimeException("you are not allowed to invite yourself");
 
-        ProjectMemberId projectMemberId=new ProjectMemberId(projectId,userId);
+        ProjectMemberId projectMemberId=new ProjectMemberId(projectId,invitee.getId());
         if(projectMemberRepository.existsById(projectMemberId))
             throw new RuntimeException("you are not allowed to invite multiple times");
 
@@ -66,6 +69,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     }
 
     @Override
+    @PreAuthorize(("@security.canManageMembers(#projectId)"))
     public MemberResponse updateMemberRole(Long projectId, Long memberId, updateRoleRequest request) {
         Long userId= authUtil.getCurrentUserId();
         Project project=getUserProjectByIdInternal(projectId);
@@ -79,6 +83,7 @@ public class ProjectMemberServiceImpl implements ProjectMemberService {
     }
 
     @Override
+    @PreAuthorize(("@security.canManageMembers(#projectId)"))
     public void removeProjectMember(Long projectId, Long memberId) {
         Long userId= authUtil.getCurrentUserId();
         Project project=getUserProjectByIdInternal(projectId);
