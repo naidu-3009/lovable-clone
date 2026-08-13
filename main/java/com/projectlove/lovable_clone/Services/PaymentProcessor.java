@@ -3,9 +3,9 @@ package com.projectlove.lovable_clone.Services;
 import com.projectlove.lovable_clone.dto.subscription.CheckoutRequest;
 import com.projectlove.lovable_clone.dto.subscription.CheckoutResponse;
 import com.projectlove.lovable_clone.dto.subscription.PortalResponse;
-import org.jspecify.annotations.Nullable;
 
-public interface SubscriptionService {
-     SubscriptionService getCurrentSubscription();
+public interface PaymentProcessor {
+    CheckoutResponse createCheckoutSessionUrl(CheckoutRequest checkoutRequest);
 
+    PortalResponse openCustomerPortal();
 }

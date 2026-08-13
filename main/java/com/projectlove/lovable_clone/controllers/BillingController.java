@@ -1,6 +1,7 @@
 package com.projectlove.lovable_clone.controllers;
 
 
+import com.projectlove.lovable_clone.Services.PaymentProcessor;
 import com.projectlove.lovable_clone.Services.PlanService;
 import com.projectlove.lovable_clone.Services.SubscriptionService;
 import com.projectlove.lovable_clone.dto.subscription.CheckoutRequest;
@@ -21,6 +22,7 @@ import java.util.List;
 public class BillingController {
      PlanService planService;
      SubscriptionService subscriptionService;
+     PaymentProcessor paymentProcessor;
 
     @GetMapping("/api/plans")
     public ResponseEntity<List<PlanResponse>> getAllPlans(){
@@ -29,21 +31,18 @@ public class BillingController {
 
     @GetMapping("/api/me/subscription")
     public ResponseEntity<SubscriptionService> getMySubscription(){
-    Long userId=1L;
-    return ResponseEntity.ok(subscriptionService.getCurrentSubscription(userId));
+    return ResponseEntity.ok(subscriptionService.getCurrentSubscription());
     }
 
-    @PostMapping("/api/stripe/checkout")
+    @PostMapping("/api/payment/checkout")
     public ResponseEntity<CheckoutResponse> createCheckoutResponse(
             @RequestBody CheckoutRequest checkoutRequest
     ){
-        Long userId=1L;
-        return ResponseEntity.ok(subscriptionService.createCheckoutSessionUrl(checkoutRequest,userId));
+        return ResponseEntity.ok(paymentProcessor.createCheckoutSessionUrl(checkoutRequest));
     }
 
-    @PostMapping("/api/stripe/portal")
+    @PostMapping("/api/payment/portal")
     public ResponseEntity<PortalResponse> openCustomerPortal(){
-        Long userId=1L;
-        return ResponseEntity.ok(subscriptionService.openCustomerPortal(userId));
+        return ResponseEntity.ok(paymentProcessor.openCustomerPortal());
     }
 }
