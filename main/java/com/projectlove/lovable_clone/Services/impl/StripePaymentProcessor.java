@@ -11,6 +11,7 @@ import com.projectlove.lovable_clone.repository.PlanRepository;
 import com.projectlove.lovable_clone.repository.UserRepository;
 import com.projectlove.lovable_clone.security.AuthUtil;
 import com.stripe.exception.StripeException;
+import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.AccessLevel;
@@ -21,10 +22,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
 //@FieldDefaults(makeFinal = true,level = AccessLevel.PRIVATE->should not use as we want frontEndUrl flexible to change
+//prse
 public class StripePaymentProcessor implements PaymentProcessor {
 
     private final AuthUtil authUtil;
@@ -37,10 +41,9 @@ public class StripePaymentProcessor implements PaymentProcessor {
 
     @Override
     public CheckoutResponse createCheckoutSessionUrl(CheckoutRequest checkoutRequest) {
-        Plan plan=planRepository.findById(checkoutRequest.planId()).orElseThrow(()-> new ResourceNotFoundException("Plan",checkoutRequest.planId().toString()));
-        Long userId=authUtil.getCurrentUserId();
-
-        User user=userRepository.findById(userId).orElseThrow(()->new ResourceNotFoundException("user",userId.toString()));
+        Plan plan = planRepository.findById(checkoutRequest.planId()).orElseThrow(() -> new ResourceNotFoundException("Plan", checkoutRequest.planId().toString()));
+        Long userId = authUtil.getCurrentUserId();
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("user", userId.toString()));
 
         var params = SessionCreateParams.builder()
                 .addLineItem(
@@ -62,21 +65,14 @@ public class StripePaymentProcessor implements PaymentProcessor {
                 .setCancelUrl(frontEndUrl + "/cancel.html")
                 .putMetadata("user_id", userId.toString())
                 .putMetadata("plan_id", plan.getId().toString());
-
-
         try {
-
-            String stripeCustomerId=user.getStripeCustomerId();
-
-            if(stripeCustomerId == null || stripeCustomerId.isEmpty()){
-                params.setCustomerEmail(user.getUsername());
-            }
-            else{
+            String stripeCustomerId = user.getStripeCustomerId();
+            if (stripeCustomerId == null || stripeCustomerId.isEmpty()) {
+                params.setCustomerEmail(user.getUsername()+"@gmail.com");
+            } else {
                 params.setCustomer(stripeCustomerId);
             }
-
-
-            Session session = Session.create(params.build());//this is where we api call to the stripe
+            Session session = Session.create(params.build());//this is where we do api call to the stripe
             return new CheckoutResponse(session.getUrl());
         } catch (StripeException e) {
             log.error("Stripe checkout session creation failed for userId={}, planId={}",
@@ -89,6 +85,11 @@ public class StripePaymentProcessor implements PaymentProcessor {
     public PortalResponse openCustomerPortal() {
 
         return null;
+    }
+
+    @Override
+    public void handleWebhookEvent(String type, StripeObject stripeObject, Map<String, String> metadata) {
+        log.info("hi");
     }
 }
 
