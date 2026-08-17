@@ -19,7 +19,6 @@ public class Subscription {
     Long id;
     Long userId;
     Long planId;
-    String stripeSubscriptionId;
     SubscriptionStatus status;
     Instant currentPeriodStart;
     Instant currentPeriodEnd;

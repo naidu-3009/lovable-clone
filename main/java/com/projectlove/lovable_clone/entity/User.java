@@ -36,6 +36,8 @@ import java.util.List;
     String password;
     String name;
 
+    @Column(unique = true)
+    String stripeCustomerId;
 
     @CreationTimestamp
     Instant created_at;

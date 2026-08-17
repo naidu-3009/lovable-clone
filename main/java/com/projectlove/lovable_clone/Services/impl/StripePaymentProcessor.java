@@ -5,8 +5,10 @@ import com.projectlove.lovable_clone.dto.subscription.CheckoutRequest;
 import com.projectlove.lovable_clone.dto.subscription.CheckoutResponse;
 import com.projectlove.lovable_clone.dto.subscription.PortalResponse;
 import com.projectlove.lovable_clone.entity.Plan;
+import com.projectlove.lovable_clone.entity.User;
 import com.projectlove.lovable_clone.error.ResourceNotFoundException;
 import com.projectlove.lovable_clone.repository.PlanRepository;
+import com.projectlove.lovable_clone.repository.UserRepository;
 import com.projectlove.lovable_clone.security.AuthUtil;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
@@ -26,7 +28,7 @@ import org.springframework.stereotype.Service;
 public class StripePaymentProcessor implements PaymentProcessor {
 
     private final AuthUtil authUtil;
-
+    private final UserRepository userRepository;
     private final PlanRepository planRepository;
 
 
@@ -38,7 +40,9 @@ public class StripePaymentProcessor implements PaymentProcessor {
         Plan plan=planRepository.findById(checkoutRequest.planId()).orElseThrow(()-> new ResourceNotFoundException("Plan",checkoutRequest.planId().toString()));
         Long userId=authUtil.getCurrentUserId();
 
-        SessionCreateParams params = SessionCreateParams.builder()
+        User user=userRepository.findById(userId).orElseThrow(()->new ResourceNotFoundException("user",userId.toString()));
+
+        var params = SessionCreateParams.builder()
                 .addLineItem(
                         SessionCreateParams.LineItem.builder()
                                 .setPrice(plan.getStripePriceId())
@@ -57,11 +61,22 @@ public class StripePaymentProcessor implements PaymentProcessor {
                 .setSuccessUrl(frontEndUrl + "/success.html?session_id={CHECKOUT_SESSION_ID}")
                 .setCancelUrl(frontEndUrl + "/cancel.html")
                 .putMetadata("user_id", userId.toString())
-                .putMetadata("plan_id", plan.getId().toString())
-                .build();
+                .putMetadata("plan_id", plan.getId().toString());
+
 
         try {
-            Session session = Session.create(params);
+
+            String stripeCustomerId=user.getStripeCustomerId();
+
+            if(stripeCustomerId == null || stripeCustomerId.isEmpty()){
+                params.setCustomerEmail(user.getUsername());
+            }
+            else{
+                params.setCustomer(stripeCustomerId);
+            }
+
+
+            Session session = Session.create(params.build());//this is where we api call to the stripe
             return new CheckoutResponse(session.getUrl());
         } catch (StripeException e) {
             log.error("Stripe checkout session creation failed for userId={}, planId={}",
