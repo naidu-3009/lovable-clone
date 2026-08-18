@@ -8,6 +8,7 @@ import com.projectlove.lovable_clone.dto.subscription.PortalResponse;
 import com.projectlove.lovable_clone.entity.Plan;
 import com.projectlove.lovable_clone.entity.User;
 import com.projectlove.lovable_clone.enums.SubscriptionStatus;
+import com.projectlove.lovable_clone.error.BadRequestException;
 import com.projectlove.lovable_clone.error.ResourceNotFoundException;
 import com.projectlove.lovable_clone.repository.PlanRepository;
 import com.projectlove.lovable_clone.repository.UserRepository;
@@ -94,18 +95,37 @@ public class StripePaymentProcessor implements PaymentProcessor {
 
     @Override
     public PortalResponse openCustomerPortal() {
+        User user=getUser(authUtil.getCurrentUserId());
 
-        return null;
+        String stripeCustomerId= user.getStripeCustomerId();
+
+        if(stripeCustomerId == null || stripeCustomerId.isEmpty()){
+            throw new BadRequestException("User does not have a Stripe Customer Id,User Id "+user.getId());
+        }
+
+        try {
+            var portalSession = com.stripe.model.billingportal.Session.create(
+                    com.stripe.param.billingportal.SessionCreateParams.builder()
+                            .setCustomer(stripeCustomerId)
+                            .setReturnUrl(frontEndUrl)
+                            .build()
+            );
+
+            return new PortalResponse(portalSession.getUrl());
+        } catch (StripeException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
     public void handleWebhookEvent(String type, StripeObject stripeObject, Map<String, String> metadata) {
         switch (type){
-            case "checkout.session.completed" -> handleCheckoutSessionCompleted((Session)stripeObject,metadata);
-            case "customer.subscription.updated" -> handleCustomerSubscriptionUpdated((Subscription)stripeObject);
-            case "customer.subscription.deleted" -> handleCustomerSubscriptionDeleted((Subscription)stripeObject);
-            case "invoice.paid" -> handleInvoicePaid((Invoice) stripeObject);
-            case "invoice.payment_failed" -> handleInvoicePaymentFailed((Invoice) stripeObject);
+            case "checkout.session.completed" -> handleCheckoutSessionCompleted((Session)stripeObject,metadata);//one-time,on checkout completion
+            case "customer.subscription.updated" -> handleCustomerSubscriptionUpdated((Subscription)stripeObject);//when user cancels,upgrades or any updates
+            case "customer.subscription.deleted" -> handleCustomerSubscriptionDeleted((Subscription)stripeObject);//when subscription ends,revoke the access
+            case "invoice.paid" -> handleInvoicePaid((Invoice) stripeObject);//when invoice is paid
+            case "invoice.payment_failed" -> handleInvoicePaymentFailed((Invoice) stripeObject);//when invoice is not paid ,mark as PAST_DUE
             default -> log.debug("Ignoring the event {}",type);
         }
 

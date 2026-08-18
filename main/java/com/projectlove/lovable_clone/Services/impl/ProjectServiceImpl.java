@@ -1,6 +1,7 @@
 package com.projectlove.lovable_clone.Services.impl;
 
 import com.projectlove.lovable_clone.Services.ProjectService;
+import com.projectlove.lovable_clone.Services.SubscriptionService;
 import com.projectlove.lovable_clone.dto.projects.ProjectRequest;
 import com.projectlove.lovable_clone.dto.projects.ProjectResponse;
 import com.projectlove.lovable_clone.dto.projects.ProjectSummaryResponse;
@@ -9,6 +10,7 @@ import com.projectlove.lovable_clone.entity.ProjectMember;
 import com.projectlove.lovable_clone.entity.ProjectMemberId;
 import com.projectlove.lovable_clone.entity.User;
 import com.projectlove.lovable_clone.enums.ProjectMemberRole;
+import com.projectlove.lovable_clone.error.BadRequestException;
 import com.projectlove.lovable_clone.error.ResourceNotFoundException;
 import com.projectlove.lovable_clone.mapper.ProjectMapper;
 import com.projectlove.lovable_clone.repository.ProjectMemberRepository;
@@ -37,6 +39,7 @@ public class ProjectServiceImpl implements ProjectService {
     ProjectMapper projectMapper;
     ProjectMemberRepository projectMemberRepository;
     AuthUtil authUtil;
+    SubscriptionService subscriptionService;
 
     @Override
     public List<ProjectSummaryResponse> getUserProjects() {
@@ -54,6 +57,12 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
         public ProjectResponse createProject(ProjectRequest request) {
+
+        if(subscriptionService.canCreateNewProject()){
+            throw new BadRequestException("user cannot create a new project with current plan ,upgrade plan asap");
+        }
+
+
         Long userId= authUtil.getCurrentUserId();
         User owner=userRepository.findById(userId).orElseThrow(
                 ()->new ResourceNotFoundException("user id not found",userId.toString())
