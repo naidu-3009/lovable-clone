@@ -31,7 +31,13 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 //@FieldDefaults(makeFinal = true,level = AccessLevel.PRIVATE->should not use as we want frontEndUrl flexible to change
-//prse
+/*
+* In this service we are managing the events which we receive from stripe (which are just a strings at EOD) and
+* we just defined few methods which should get triggered based on the type of event/string we received from webhook
+* first we are running stripe cli on our local host and that listens and makes a post request to the api we mentioned and based
+* on that we call methods in subscription service impl.
+*
+* */
 public class StripePaymentProcessor implements PaymentProcessor {
 
     private final AuthUtil authUtil;

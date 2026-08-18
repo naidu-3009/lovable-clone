@@ -4,10 +4,7 @@ package com.projectlove.lovable_clone.controllers;
 import com.projectlove.lovable_clone.Services.PaymentProcessor;
 import com.projectlove.lovable_clone.Services.PlanService;
 import com.projectlove.lovable_clone.Services.SubscriptionService;
-import com.projectlove.lovable_clone.dto.subscription.CheckoutRequest;
-import com.projectlove.lovable_clone.dto.subscription.CheckoutResponse;
-import com.projectlove.lovable_clone.dto.subscription.PlanResponse;
-import com.projectlove.lovable_clone.dto.subscription.PortalResponse;
+import com.projectlove.lovable_clone.dto.subscription.*;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
@@ -45,7 +42,7 @@ public class BillingController {
     }
 
     @GetMapping("/api/me/subscription")
-    public ResponseEntity<SubscriptionService> getMySubscription(){
+    public ResponseEntity<SubscriptionResponse> getMySubscription(){
     return ResponseEntity.ok(subscriptionService.getCurrentSubscription());
     }
 
