@@ -39,11 +39,15 @@ public class AuthUtil {
     }
 
     public SecretKey getSecretKey(){
-        return Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8)); //we are just creating the signing in key so header+payload+this key== signature
     }
 
+    //header.payload.sign->jwt tokent header==what algorithm we have used,payload=our info(subject,claim)->we inserted this +issued at and expired at inpayload
+    //remember jwt is not encrypted->its just base 64 encoded what makes special?->key(storedin server)+algo(from header)=sign
+    //payload+secret key+ hs256(algo)(came from header)==signature
+
     public JwtUserPrincipal verifyAccessToken(String token){
-        Claims claims=Jwts.parser().verifyWith(getSecretKey()).build().parseSignedClaims(token).getPayload();
+        Claims claims = Jwts.parser().verifyWith(getSecretKey()).build().parseSignedClaims(token).getPayload();
         Long userId = Long.parseLong(claims.get("userId", String.class));
 
         String userName=claims.getSubject();

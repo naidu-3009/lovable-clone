@@ -44,6 +44,10 @@ public class AuthServiceImpl implements AuthService {
         String token=authUtil.generateAccessToken(user);
         return new AuthResponse(token,userMapper.toUserProfileResponse(user));
 
+        //we are getting username+password +name from user => using thse we are generating jwt and returning
+        //it to the user btw we are sending userprofileresponse btw
+
+
     }
 
     @Override
