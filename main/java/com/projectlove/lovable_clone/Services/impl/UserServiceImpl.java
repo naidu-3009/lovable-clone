@@ -16,6 +16,11 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true,level = AccessLevel.PRIVATE)
+//first we tell our spring what username it should take what pw how does it access our db i.e from this method->loadUserByUsername and for
+// definning this method we implement  UserDetailsService(UserService is our application interface right) and in method there is a rule
+//the rule is we should return an object of UserDetails but what i did is my User entity implements UserDetails therefore if i return User/UserDetails its
+//essentially the same thing na so this is how spring sec does the whole thing but we just give access to our
+//User db this way
 public class    UserServiceImpl implements UserService, UserDetailsService {
 
     UserRepository userRepository;
@@ -30,4 +35,12 @@ public class    UserServiceImpl implements UserService, UserDetailsService {
         return userRepository.findByUsername(username).orElseThrow(()->new ResourceNotFoundException("user",username));
 
     }
+
+//    UserServiceImpl implements UserDetailsService, which is the key link between Spring Security and your database:
+//    when AuthenticationManager needs to authenticate a username/password, it delegates to the UserDetailsService and calls loadUserByUsername(username), which uses userRepository.findByUsername(username) to fetch the user from the DB.
+//    Although the method's return type is UserDetails, you return a User object because your User class implements UserDetails; therefore, a User is-a UserDetails and can be returned through upcasting/runtime polymorphism.
+//    Spring Security then gets the UserDetails containing the username and stored password hash and uses it to verify the supplied password.
+//    So the flow is: AuthenticationManager → AuthenticationProvider → UserDetailsService → loadUserByUsername() → UserRepository → User (as UserDetails) → password verification → authenticated.
+
+
 }

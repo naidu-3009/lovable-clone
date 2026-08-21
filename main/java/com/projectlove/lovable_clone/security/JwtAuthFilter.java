@@ -51,5 +51,15 @@ public class   JwtAuthFilter extends OncePerRequestFilter {
         }
 
 
+//        1. Read the Authorization header from the incoming request.
+//        2. If there is no Bearer <JWT> token, continue the filter chain without authenticating the user.
+//        3. If a Bearer token exists, extract the JWT from the header.
+//        4. Pass the JWT to AuthUtil.verifyAccessToken() to verify it and extract the user's information as a JwtUserPrincipal.
+//        5. Create a UsernamePasswordAuthenticationToken using that principal.
+//        6. Put that Authentication object into the SecurityContextHolder using setAuthentication(). This tells Spring Security who the current authenticated user is.
+//        7. Call filterChain.doFilter() so the request continues through the remaining filters and eventually reaches the controller.
+//        8. If anything goes wrong, the exception is passed to the HandlerExceptionResolver.
+//        In short: Request → JWT → verify → JwtUserPrincipal → Authentication → SecurityContextHolder → continue request → Controller.
+
     }
 }

@@ -63,7 +63,7 @@ public class StripePaymentProcessor implements PaymentProcessor {
                                 .setPrice(plan.getStripePriceId())
                                 .setQuantity(1L)
                                 .build())
-                .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                .setMode(SessionCreateParams.Mode.SUBSCRIPTION)//This tells stripe that this is not one time payment but a recurring one
                 .setSubscriptionData(
                         SessionCreateParams.SubscriptionData.builder()
                                 .setBillingMode(
@@ -257,10 +257,10 @@ public class StripePaymentProcessor implements PaymentProcessor {
         var parent=invoice.getParent();
         if(parent==null) return null;
 
-        var subDeatils=parent.getSubscriptionDetails();
-        if(subDeatils==null) return null;
+        var subDetails=parent.getSubscriptionDetails();
+        if(subDetails==null) return null;
 
-        return subDeatils.getSubscription();
+        return subDetails.getSubscription();
 
     }
 

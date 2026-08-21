@@ -38,9 +38,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final ProjectMemberRepository projectMemberRepository;
     private  final Integer FREE_TIER_PROJECTS_ALLOWED=100;
 
-
-
-
     @Override
     public SubscriptionResponse getCurrentSubscription() {
         Long userId=authUtil.getCurrentUserId();

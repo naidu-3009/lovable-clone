@@ -101,5 +101,95 @@ public class BillingController {
         }
 
     }
+
+
+    /*
+
+createCheckoutSessionUrl()
+→ Ask Stripe to create Checkout.
+
+Session.create()
+→ Actual Stripe API call.
+
+@PostMapping("/webhooks/payment")
+→ Stripe's entry point into our backend.
+
+Webhook.constructEvent()
+→ Verify webhook signature + construct Event.
+
+getDataObjectDeserializer()
+→ Convert event data into Stripe Java object.
+
+handleWebhookEvent()
+→ Route event to correct handler.
+
+handleCheckoutSessionCompleted()
+→ Create/activate local subscription after checkout.
+
+handleCustomerSubscriptionUpdated()
+→ Sync changed Stripe subscription state to our DB.
+
+handleCustomerSubscriptionDeleted()
+→ Cancel local subscription.
+
+handleInvoicePaid()
+→ Renew local billing period.
+
+handleInvoicePaymentFailed()
+→ Mark local subscription PAST_DUE.
+
+extractSubscription()
+→ Get Stripe Subscription ID from Invoice.
+
+resolvePlanId()
+→ Convert Stripe Price ID → our Plan ID.
+
+mapStripeStatusToEnum()
+→ Convert Stripe status → our SubscriptionStatus.*/
 }
 
+/*                 CHECKOUT
+                    │
+                    ↓
+             MY BACKEND → STRIPE
+                    │
+              Session.create()
+                    │
+                    ↓
+             Stripe Checkout
+                    │
+                 USER PAYS
+                    │
+                    ↓
+                 WEBHOOK
+                    │
+                    ↓
+             STRIPE → MY BACKEND
+                    │
+                    ↓
+          verify Stripe signature
+                    │
+                    ↓
+             deserialize event
+                    │
+                    ↓
+             get Stripe object
+                    │
+                    ↓
+           StripePaymentProcessor
+                    │
+              switch(event)
+                    │
+       ┌────────────┼────────────┐
+       ↓            ↓            ↓
+    Session    Subscription    Invoice
+       │            │            │
+       ↓            ↓            ↓
+    initial      changes      paid/failed
+       │            │            │
+       └────────────┼────────────┘
+                    ↓
+           SubscriptionService
+                    │
+                    ↓
+              YOUR DATABASE*/
