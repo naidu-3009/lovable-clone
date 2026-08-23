@@ -12,6 +12,7 @@ public class AiConfig {
 
 
 
+    @Bean
     public ChatClient chatClient(ChatClient.Builder builder){
         return builder
                 .defaultAdvisors(

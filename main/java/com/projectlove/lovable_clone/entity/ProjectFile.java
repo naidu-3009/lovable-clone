@@ -1,9 +1,12 @@
 package com.projectlove.lovable_clone.entity;
 
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 
@@ -12,16 +15,24 @@ import java.time.Instant;
 @Setter
 public class ProjectFile {
 
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "projectId",nullable = false)
     Project project;
+
+    @Column(nullable = false)
     String path;
+
     String minioObjectKey;
 
-    User createdBy;
-    User updatedBy;
-
-
+    @CreationTimestamp
     Instant createdAt;
+
+    @UpdateTimestamp
     Instant updatedAt;
     Instant deletedAt;
 
