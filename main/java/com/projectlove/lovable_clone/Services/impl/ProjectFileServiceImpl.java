@@ -68,7 +68,7 @@ public class ProjectFileServiceImpl implements ProjectFileService {
         try {
             byte[] contentBytes = fileContent.getBytes(StandardCharsets.UTF_8);
             InputStream inputStream = new ByteArrayInputStream(contentBytes);
-            // saving the file content
+            // saving the file content to minio
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(projectBucket)
@@ -98,12 +98,12 @@ public class ProjectFileServiceImpl implements ProjectFileService {
     }
 
 
-    private String determineContentType(String path) {
-        String type = URLConnection.guessContentTypeFromName(path);
+    private String determineContentType(String filePath) {
+        String type = URLConnection.guessContentTypeFromName(filePath);//we are asking java do you this file type if it fails we will find it manually from seeing the path
         if (type != null) return type;
-        if (path.endsWith(".jsx") || path.endsWith(".ts") || path.endsWith(".tsx")) return "text/javascript";
-        if (path.endsWith(".json")) return "application/json";
-        if (path.endsWith(".css")) return "text/css";
+        if (filePath.endsWith(".jsx") || filePath.endsWith(".ts") || filePath.endsWith(".tsx")) return "text/javascript";
+        if (filePath.endsWith(".json")) return "application/json";
+        if (filePath.endsWith(".css")) return "text/css";
 
         return "text/plain";
     }

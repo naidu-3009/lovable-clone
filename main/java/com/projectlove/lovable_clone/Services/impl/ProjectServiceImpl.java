@@ -58,7 +58,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
         public ProjectResponse createProject(ProjectRequest request) {
 
-        if(subscriptionService.canCreateNewProject()){
+        if(!subscriptionService.canCreateNewProject()){
             throw new BadRequestException("user cannot create a new project with current plan ,upgrade plan asap");
         }
 
