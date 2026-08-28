@@ -3,6 +3,7 @@ package com.projectlove.lovable_clone.Services.impl;
 import com.projectlove.lovable_clone.Services.AiGenerationService;
 import com.projectlove.lovable_clone.llm.PromptUtils;
 import com.projectlove.lovable_clone.llm.advisors.FileTreeContextAdvisor;
+import com.projectlove.lovable_clone.llm.tools.CodeGenerationTools;
 import com.projectlove.lovable_clone.security.AuthUtil;
 import io.jsonwebtoken.security.MalformedKeyException;
 import lombok.AccessLevel;
@@ -55,9 +56,12 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 
         StringBuilder fullResponseBuffer=new StringBuilder();
 
+        CodeGenerationTools codeGenerationTools=new CodeGenerationTools(projectFileService,projectId);
+
         return chatClient.prompt()
                 .system(PromptUtils.CODE_GENERATION_SYSTEM_PROMPT)
                 .user(userPrompt)
+                .tools(codeGenerationTools)
                 .advisors(
                         advisorSpec -> {
                             advisorSpec.params(advisorParams);

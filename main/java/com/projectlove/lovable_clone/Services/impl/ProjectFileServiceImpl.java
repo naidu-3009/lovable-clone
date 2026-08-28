@@ -9,6 +9,7 @@ import com.projectlove.lovable_clone.error.ResourceNotFoundException;
 import com.projectlove.lovable_clone.mapper.ProjectFileMapper;
 import com.projectlove.lovable_clone.repository.ProjectFileRepository;
 import com.projectlove.lovable_clone.repository.ProjectRepository;
+import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +48,20 @@ public class ProjectFileServiceImpl implements ProjectFileService {
 
     @Override
     public FileContentResponse getFileContent(Long projectId, String path) {
-        return null;
+        String objectName = projectId + "/" + path;
+        try (
+                InputStream is = minioClient.getObject(
+                        GetObjectArgs.builder()
+                                .bucket("projectslovable")
+                                .object(objectName)
+                                .build())) {
+
+            String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            return new FileContentResponse(path, content);
+        } catch (Exception e) {
+            log.error("Failed to read file: {}/{}", projectId, path, e);
+            throw new RuntimeException("Failed to read file content", e);
+        }
     }
 
     @Override
