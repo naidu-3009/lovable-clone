@@ -2,6 +2,7 @@ package com.projectlove.lovable_clone.Services.impl;
 
 import com.projectlove.lovable_clone.Services.AiGenerationService;
 import com.projectlove.lovable_clone.llm.PromptUtils;
+import com.projectlove.lovable_clone.llm.advisors.FileTreeContextAdvisor;
 import com.projectlove.lovable_clone.security.AuthUtil;
 import io.jsonwebtoken.security.MalformedKeyException;
 import lombok.AccessLevel;
@@ -12,6 +13,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.Map;
 import java.util.Objects;
@@ -28,6 +30,12 @@ public class AiGenerationServiceImpl implements AiGenerationService {
    ChatClient chatClient;
    AuthUtil authUtil;
    ProjectFileServiceImpl projectFileService;
+   FileTreeContextAdvisor fileTreeContextAdvisor;
+
+   //We could just append our system prompt with our filetreecontext like just append my systemprompt
+    //with the file tree context with just like projectfileservice.getfiletree(projectid) and append like normal string
+    //but the spring ai convention is that to add what ever you want to add in advisors only
+    //if that thing is other than user or system prompt
 
 
      static  Pattern FILE_TAG_PATTERN=  Pattern.compile("<file path=\"([^\"]+)\">(.*?)</file>",Pattern.DOTALL);
@@ -53,6 +61,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
                 .advisors(
                         advisorSpec -> {
                             advisorSpec.params(advisorParams);
+                            advisorSpec.advisors(fileTreeContextAdvisor);
                         }
                 ).stream()
                 .chatResponse()
@@ -60,11 +69,16 @@ public class AiGenerationServiceImpl implements AiGenerationService {
                     String content=response.getResult().getOutput().getText();
                     fullResponseBuffer.append(content);
                 })
-                .doOnComplete(()->{
-                    parseAndSaveFiles(fullResponseBuffer.toString(),projectId);
+                .doOnComplete(() -> {
+                    parseAndSaveFiles(fullResponseBuffer.toString(), projectId);
                 })
-                .doOnError(error -> log.error( "Error occured during streaming of projectId: {}",projectId ))
-                .map(response-> Objects.requireNonNull(response.getResult().getOutput().getText()));
+                .doOnError(error ->
+                        log.error(
+                                "Error occurred during streaming of projectId: {}",
+                                projectId,
+                                error
+                        )
+                )                .map(response-> Objects.requireNonNull(response.getResult().getOutput().getText()));
 
     }
 

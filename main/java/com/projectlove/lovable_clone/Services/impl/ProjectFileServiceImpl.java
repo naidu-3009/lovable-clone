@@ -6,6 +6,7 @@ import com.projectlove.lovable_clone.dto.projects.FileNode;
 import com.projectlove.lovable_clone.entity.Project;
 import com.projectlove.lovable_clone.entity.ProjectFile;
 import com.projectlove.lovable_clone.error.ResourceNotFoundException;
+import com.projectlove.lovable_clone.mapper.ProjectFileMapper;
 import com.projectlove.lovable_clone.repository.ProjectFileRepository;
 import com.projectlove.lovable_clone.repository.ProjectRepository;
 import io.minio.MinioClient;
@@ -31,24 +32,21 @@ public class ProjectFileServiceImpl implements ProjectFileService {
     private final ProjectRepository projectRepository;
     private final ProjectFileRepository projectFileRepository;
     private final MinioClient minioClient;
+    private final ProjectFileMapper projectFileMapper;
 
     @Value("${minio.project-bucket}")
     private String projectBucket;
 
     @Override
-    public List<FileNode> getFileTree(Long userId, Long projectId) {
+    public List<FileNode>  getFileTree( Long projectId) {
 
         List<ProjectFile>  projectFileList=projectFileRepository.findByProjectId(projectId);
-
-
-
-
-
-        return List.of();
+        List<FileNode> fileTreeList=projectFileMapper.toFileNode(projectFileList);
+        return fileTreeList;
     }
 
     @Override
-    public FileContentResponse getFileContent(Long projectId, String path, Long userId) {
+    public FileContentResponse getFileContent(Long projectId, String path) {
         return null;
     }
 

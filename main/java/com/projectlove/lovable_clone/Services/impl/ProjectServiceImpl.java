@@ -1,6 +1,7 @@
 package com.projectlove.lovable_clone.Services.impl;
 
 import com.projectlove.lovable_clone.Services.ProjectService;
+import com.projectlove.lovable_clone.Services.ProjectTemplateService;
 import com.projectlove.lovable_clone.Services.SubscriptionService;
 import com.projectlove.lovable_clone.dto.projects.ProjectRequest;
 import com.projectlove.lovable_clone.dto.projects.ProjectResponse;
@@ -23,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.Instant;
 import java.util.List;
@@ -40,6 +40,7 @@ public class ProjectServiceImpl implements ProjectService {
     ProjectMemberRepository projectMemberRepository;
     AuthUtil authUtil;
     SubscriptionService subscriptionService;
+    ProjectTemplateService projectTemplateService;
 
     @Override
     public List<ProjectSummaryResponse> getUserProjects() {
@@ -72,6 +73,8 @@ public class ProjectServiceImpl implements ProjectService {
         ProjectMemberId projectMemberId=new ProjectMemberId(project.getId(),userId);
         ProjectMember projectMember=ProjectMember.builder().projectMemberRole(ProjectMemberRole.OWNER).user(owner).acceptedAt(Instant.now()).invitedAt(Instant.now()).projectMemberId(projectMemberId).project(project).build();
          projectMemberRepository.save(projectMember);
+         projectTemplateService.initializeProjectFromTemplate(project.getId());
+
         return projectMapper.toProjectResponse(project);
 
     }
@@ -101,9 +104,9 @@ public class ProjectServiceImpl implements ProjectService {
     //internal use
     private Project getUserProjectByIdInternal(Long projectId){
         Long userId= authUtil.getCurrentUserId();
-        Project project= projectRepository.findAllAccessibleByUserId(projectId,userId).orElseThrow(()->{return new ResourceNotFoundException("Project",projectId.toString());
+        return projectRepository.findAllAccessibleByUserId(projectId,userId).orElseThrow(()->{return new ResourceNotFoundException("Project",projectId.toString());
         });
-        return project;
+
     }
 
 }
