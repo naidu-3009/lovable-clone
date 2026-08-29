@@ -1,0 +1,43 @@
+package com.projectlove.lovable_clone.entity;
+
+
+import com.projectlove.lovable_clone.enums.ChatEventType;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+@Entity
+@Table(name = "chat_events")
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Getter
+@Setter
+public class ChatEvent {
+
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
+    ChatMessage chatMessage;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    ChatEventType chatEventType;
+
+    @Column(nullable = false)
+    Integer sequenceOrder;
+
+    @Column(columnDefinition = "text")
+    String content;
+
+    String metadata;
+
+    String filePath;
+
+}

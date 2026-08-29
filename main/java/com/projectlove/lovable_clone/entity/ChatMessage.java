@@ -8,7 +8,7 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
-
+import java.util.List;
 
 
 @Entity
@@ -46,6 +46,11 @@ public class ChatMessage {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     MessageRole role; //USER,ASSISTANT
+
+
+    @OneToMany(mappedBy = "chatMessage",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+            @OrderBy("sequenceOrder ASC")
+    List<ChatEvent> events;
 
 
 
