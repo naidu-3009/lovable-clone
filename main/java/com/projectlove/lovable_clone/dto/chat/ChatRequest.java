@@ -1,4 +1,4 @@
-package com.projectlove.lovable_clone.chat;
+package com.projectlove.lovable_clone.dto.chat;
 
 public record ChatRequest(
         String message,Long projectId

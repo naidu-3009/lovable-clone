@@ -28,7 +28,7 @@ public class ChatEvent {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    ChatEventType chatEventType;
+    ChatEventType type;
 
     @Column(nullable = false)
     Integer sequenceOrder;
@@ -38,6 +38,6 @@ public class ChatEvent {
 
     String metadata;
 
-    String filePath;
+    String filePath;//null unless fileedit
 
 }

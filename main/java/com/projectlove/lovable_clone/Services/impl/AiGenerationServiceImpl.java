@@ -1,9 +1,15 @@
 package com.projectlove.lovable_clone.Services.impl;
 
 import com.projectlove.lovable_clone.Services.AiGenerationService;
+import com.projectlove.lovable_clone.entity.*;
+import com.projectlove.lovable_clone.enums.ChatEventType;
+import com.projectlove.lovable_clone.enums.MessageRole;
+import com.projectlove.lovable_clone.error.ResourceNotFoundException;
 import com.projectlove.lovable_clone.llm.PromptUtils;
 import com.projectlove.lovable_clone.llm.advisors.FileTreeContextAdvisor;
 import com.projectlove.lovable_clone.llm.tools.CodeGenerationTools;
+import com.projectlove.lovable_clone.llm.tools.LlmResponseParser;
+import com.projectlove.lovable_clone.repository.*;
 import com.projectlove.lovable_clone.security.AuthUtil;
 import io.jsonwebtoken.security.MalformedKeyException;
 import lombok.AccessLevel;
@@ -16,6 +22,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -32,6 +39,12 @@ public class AiGenerationServiceImpl implements AiGenerationService {
    AuthUtil authUtil;
    ProjectFileServiceImpl projectFileService;
    FileTreeContextAdvisor fileTreeContextAdvisor;
+   ChatSessionRepository chatSessionRepository;
+   LlmResponseParser llmResponseParser;
+   ProjectRepository projectRepository;
+   UserRepository userRepository;
+   ChatMessageRepository chatMessageRepository;
+   ChatEventRepository chatEventRepository;
 
    //We could just append our system prompt with our filetreecontext like just append my systemprompt
     //with the file tree context with just like projectfileservice.getfiletree(projectid) and append like normal string
@@ -46,7 +59,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
     //as parameters
     public Flux<String> streamResponse(String userPrompt, Long projectId) {
             Long userId=authUtil.getCurrentUserId();
-            createChatSessionIfNotExists(projectId,userId);
+           ChatSession chatSession= createChatSessionIfNotExists(projectId,userId);
 
         Map<String,Object> advisorParams =Map.of(
                 "userId" ,userId,
@@ -74,7 +87,8 @@ public class AiGenerationServiceImpl implements AiGenerationService {
                     fullResponseBuffer.append(content);
                 })
                 .doOnComplete(() -> {
-                    parseAndSaveFiles(fullResponseBuffer.toString(), projectId);
+                    finalizeChats(userPrompt,chatSession,fullResponseBuffer.toString(),projectId);
+
                 })
                 .doOnError(error ->
                         log.error(
@@ -116,8 +130,39 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 
 
 
+private void finalizeChats(String userMessage, ChatSession chatSession,String fullText,Long projectId){
+
+   //saving the user message
+    chatMessageRepository.save(
+            ChatMessage.builder()
+                    .chatSession(chatSession)
+                    .role(MessageRole.USER)
+                    .content(userMessage)
+                    .build()
+    );
+
+    ChatMessage assistantChatMessage=ChatMessage.builder()
+            .role(MessageRole.ASSISTANT)
+            .chatSession(chatSession)
+            .build();
+
+    List<ChatEvent> chatEventList= llmResponseParser.parseChatEvents(fullText,assistantChatMessage);
+
+    chatEventList.stream()
+            .filter(e->e.getType()== ChatEventType.FILE_EDIT)
+            .forEach(e->projectFileService.saveFile(projectId,e.getFilePath(),e.getContent()));
+
+    chatEventRepository.saveAll(chatEventList);
 
 
+
+}
+
+
+
+
+
+//not in user
     private void parseAndSaveFiles(String fullResponse, Long projectId) {
 //            String dummy= """
 //                    <message>good sounding verbs related to thinking</message>
@@ -156,6 +201,19 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 
     }
 
-    private void createChatSessionIfNotExists(Long projectId, Long userId) {
+    private ChatSession createChatSessionIfNotExists(Long projectId, Long userId) {
+        ChatSessionId chatSessionId=new ChatSessionId(projectId,userId);
+        ChatSession chatSession=chatSessionRepository.findById(chatSessionId).orElse(null);
+
+        if(chatSession==null){
+            Project project=projectRepository.findById(projectId).orElseThrow(()->new ResourceNotFoundException("project",projectId.toString()));
+            User user=userRepository.findById(authUtil.getCurrentUserId()).orElseThrow(()->new ResourceNotFoundException("user",userId.toString()));
+            ChatSession freshChatSession=ChatSession.builder().project(project).user(user).chatSessionId(chatSessionId).build();
+            chatSessionRepository.save(freshChatSession);
+            return freshChatSession;
+        }
+
+        return chatSession;
+
     }
 }
