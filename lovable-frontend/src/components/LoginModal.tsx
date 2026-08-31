@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Loader2, Lock, Mail, Sparkles } from "lucide-react";
+import { Loader2, Lock, Mail } from "lucide-react";
 import { api, setAuthToken, setUserInfo } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { AuthLayout } from "@/components/AuthLayout";
 
 export function LoginModal() {
   const [email, setEmail] = useState("");
@@ -51,24 +52,7 @@ export function LoginModal() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      {/* Background gradient */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/3 left-1/3 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative w-full max-w-md">
-        {/* Card */}
-        <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-2xl">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/20 mb-5">
-              <Sparkles className="w-7 h-7 text-primary" />
-            </div>
-            <h1 className="text-2xl font-semibold text-foreground mb-2">Welcome to Lovable</h1>
-            <p className="text-muted-foreground text-sm">Sign in to continue building</p>
-          </div>
-
+    <AuthLayout title="Welcome back" description="Sign in to continue building with your project companion.">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-foreground">
@@ -82,7 +66,7 @@ export function LoginModal() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-12 bg-muted/50 border-border/50 focus:border-primary rounded-xl text-sm"
+                                    className="h-11 border-border/70 bg-muted/40 pl-10 text-sm"
                   disabled={isLoading}
                 />
               </div>
@@ -100,7 +84,7 @@ export function LoginModal() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 h-12 bg-muted/50 border-border/50 focus:border-primary rounded-xl text-sm"
+                                    className="h-11 border-border/70 bg-muted/40 pl-10 text-sm"
                   disabled={isLoading}
                 />
               </div>
@@ -109,7 +93,7 @@ export function LoginModal() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-xl text-sm"
+              className="h-11 w-full font-semibold shadow-[0_8px_24px_hsl(var(--primary)/0.16)]"
             >
               {isLoading ? (
                 <>
@@ -122,14 +106,12 @@ export function LoginModal() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground mt-6">
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Don't have an account?{" "}
             <Link to="/signup" className="text-primary hover:underline font-medium">
               Sign up
             </Link>
           </p>
-        </div>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

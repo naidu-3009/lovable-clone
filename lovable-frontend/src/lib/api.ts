@@ -331,7 +331,7 @@ export const api = {
         // Buffers
         let sseBuffer = ""; // To handle split SSE lines
         let fullContentBuffer = ""; // To accumulate clean text for file regex
-        let lastProcessedIndex = 0; // Optimization for regex
+        const lastProcessedIndex = 0; // Optimization for regex
 
         while (true) {
           const { done, value } = await reader.read();

@@ -49,17 +49,13 @@ export function PreviewPanel({ projectId, runtimeError, onDismiss, onFix }: Prev
     }
   };
 
-  const handleRefresh = () => {
-    const iframe = document.querySelector("iframe");
-    if (iframe) {
-      iframe.src = iframe.src;
-    }
-  };
+  const [refreshKey, setRefreshKey] = useState(0);
+  const handleRefresh = () => setRefreshKey((key) => key + 1);
 
   return (
     <div className="flex flex-col h-full bg-background">
       {/* URL Bar */}
-      <div className="h-12 shrink-0 flex items-center gap-2 px-3 border-b border-border/50 bg-panel">
+      <div className="h-12 shrink-0 flex items-center gap-2 px-3 border-b border-border/70 bg-panel">
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -72,7 +68,7 @@ export function PreviewPanel({ projectId, runtimeError, onDismiss, onFix }: Prev
           </Button>
         </div>
 
-        <div className="flex-1 flex items-center h-8 px-3 rounded-md bg-muted/50 text-sm text-muted-foreground">
+          <div className="flex-1 flex items-center h-8 px-3 rounded-md border border-border/60 bg-muted/40 text-sm text-muted-foreground">
           <Globe className="w-3.5 h-3.5 mr-2 shrink-0" />
           <span className="truncate">
             {previewUrl || "Click 'Run Preview' to deploy"}
@@ -115,6 +111,7 @@ export function PreviewPanel({ projectId, runtimeError, onDismiss, onFix }: Prev
       <div className="flex-1 bg-[#1a1a1a]">
         {previewUrl ? (
           <iframe
+            key={refreshKey}
             src={previewUrl}
             className="w-full h-full border-0"
             title="Preview"
@@ -122,12 +119,13 @@ export function PreviewPanel({ projectId, runtimeError, onDismiss, onFix }: Prev
           />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <div className="w-16 h-16 rounded-xl bg-muted/20 flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-xl border border-border bg-muted/30 flex items-center justify-center mb-4">
               <Globe className="w-8 h-8 text-muted-foreground/50" />
             </div>
             <p className="text-sm text-muted-foreground">
-              No preview available yet
+              Your preview will appear here
             </p>
+            <p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">Run a preview after your companion has generated or updated the project.</p>
           </div>
         )}
       </div>

@@ -1,353 +1,76 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, LogOut, Search, Folder, Loader2, MoreVertical, Trash, Download, Edit } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { api, removeAuthToken, removeUserInfo, getUserInfo } from "@/lib/api";
+import { ArrowUpRight, Braces, Download, FolderPlus, Loader2, LogOut, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { api, getUserInfo, removeAuthToken, removeUserInfo } from "@/lib/api";
 import { ProjectSummaryResponse } from "@/lib/types";
+import { generateGradient } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { generateGradient, cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+
+const formatDate = (value: string) => new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
 
 export function ProjectsDashboard() {
-    const navigate = useNavigate();
-    const { toast } = useToast();
-    const [projects, setProjects] = useState<ProjectSummaryResponse[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isCreating, setIsCreating] = useState(false);
-    const [newProjectName, setNewProjectName] = useState("");
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [projects, setProjects] = useState<ProjectSummaryResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [dialog, setDialog] = useState<"create" | "rename" | null>(null);
+  const [name, setName] = useState("");
+  const [selected, setSelected] = useState<ProjectSummaryResponse | null>(null);
+  const [saving, setSaving] = useState(false);
 
-    // Rename state
-    const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
-    const [projectToRename, setProjectToRename] = useState<ProjectSummaryResponse | null>(null);
-    const [renameName, setRenameName] = useState("");
-
-    useEffect(() => {
-        fetchProjects();
-    }, []);
-
-    const fetchProjects = async () => {
-        try {
-            const data = await api.getProjects();
-            setProjects(data);
-        } catch (error) {
-            console.error("Failed to fetch projects:", error);
-            toast({
-                title: "Error",
-                description: "Failed to load projects. Please try again.",
-                variant: "destructive",
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCreateProject = async () => {
-        if (!newProjectName.trim()) return;
-
-        setIsCreating(true);
-        try {
-            const newProject = await api.createProject(newProjectName);
-            setProjects([newProject, ...projects]);
-            setNewProjectName("");
-            setIsDialogOpen(false);
-            toast({
-                title: "Success",
-                description: "Project created successfully",
-            });
-            // Optionally navigate to the new project immediately
-            // navigate(`/projects/${newProject.id}`);
-        } catch (error) {
-            console.error("Failed to create project:", error);
-            toast({
-                title: "Error",
-                description: "Failed to create project",
-                variant: "destructive",
-            });
-        } finally {
-            setIsCreating(false);
-        }
-    };
-
-    const handleDeleteProject = async (e: React.MouseEvent, projectId: number) => {
-        e.stopPropagation();
-        if (!confirm("Are you sure you want to delete this project? This action cannot be undone.")) return;
-
-        try {
-            await api.deleteProject(projectId.toString());
-            setProjects(projects.filter(p => p.id !== projectId));
-            toast({ title: "Success", description: "Project deleted successfully" });
-        } catch (error) {
-            console.error("Failed to delete:", error);
-            toast({ title: "Error", description: "Failed to delete project", variant: "destructive" });
-        }
-    };
-
-    const handleDownloadProject = async (e: React.MouseEvent, projectId: number) => {
-        e.stopPropagation();
-        try {
-            const blob = await api.downloadProjectZip(projectId.toString());
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `project-${projectId}.zip`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            toast({ title: "Success", description: "Download started" });
-        } catch (error) {
-            console.error("Failed to download:", error);
-            toast({ title: "Error", description: "Failed to download project", variant: "destructive" });
-        }
-    };
-
-    const handleRenameClick = (e: React.MouseEvent, project: ProjectSummaryResponse) => {
-        e.stopPropagation();
-        setProjectToRename(project);
-        setRenameName(project.name);
-        setIsRenameDialogOpen(true);
-    };
-
-    const handleRenameSubmit = async () => {
-        if (!projectToRename || !renameName.trim()) return;
-
-        try {
-            await api.updateProject(projectToRename.id.toString(), renameName);
-            setProjects(projects.map(p => p.id === projectToRename.id ? { ...p, name: renameName } : p));
-            setIsRenameDialogOpen(false);
-            setProjectToRename(null);
-            toast({ title: "Success", description: "Project renamed successfully" });
-        } catch (error) {
-            console.error("Failed to rename:", error);
-            toast({ title: "Error", description: "Failed to rename project", variant: "destructive" });
-        }
-    };
-
-    const handleLogout = () => {
-        removeAuthToken();
-        removeUserInfo();
-        navigate("/login");
-    };
-
-    const filteredProjects = projects.filter((project) =>
-        project.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    return (
-        <div className="min-h-screen bg-background">
-            {/* Header */}
-            <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="container flex h-14 max-w-screen-2xl items-center justify-between px-4 sm:px-8">
-                    <div className="flex items-center gap-2 font-bold text-lg">
-                        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                            <Folder className="w-5 h-5 text-primary" />
-                        </div>
-                        Project Companion
-                    </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-                                <Avatar className="h-9 w-9">
-                                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                                        {(() => {
-                                            const userInfo = getUserInfo();
-                                            if (userInfo?.name) {
-                                                return userInfo.name.charAt(0).toUpperCase();
-                                            }
-                                            return "U";
-                                        })()}
-                                    </AvatarFallback>
-                                </Avatar>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            <div className="flex flex-col space-y-1 p-2">
-                                <p className="text-sm font-medium leading-none">
-                                    {getUserInfo()?.name || "User"}
-                                </p>
-                                <p className="text-xs leading-none text-muted-foreground">
-                                    {getUserInfo()?.username || ""}
-                                </p>
-                            </div>
-                            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 cursor-pointer">
-                                <LogOut className="w-4 h-4 mr-2" />
-                                Sign Out
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-            </header>
-
-            <main className="container max-w-screen-2xl py-8 px-4 sm:px-8">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-                        <p className="text-muted-foreground mt-1">
-                            Manage and create your AI-powered projects
-                        </p>
-                    </div>
-
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="gap-2">
-                                <Plus className="w-4 h-4" />
-                                New Project
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Create New Project</DialogTitle>
-                                <DialogDescription>
-                                    Give your project a name to get started. You can change this later.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="py-4">
-                                <Input
-                                    placeholder="My Awesome Project"
-                                    value={newProjectName}
-                                    onChange={(e) => setNewProjectName(e.target.value)}
-                                    onKeyDown={(e) => e.key === "Enter" && handleCreateProject()}
-                                />
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button onClick={handleCreateProject} disabled={isCreating || !newProjectName.trim()}>
-                                    {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Create Project
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-
-                    {/* Rename Dialog */}
-                    <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Rename Project</DialogTitle>
-                            </DialogHeader>
-                            <div className="py-4">
-                                <Input
-                                    value={renameName}
-                                    onChange={(e) => setRenameName(e.target.value)}
-                                    onKeyDown={(e) => e.key === "Enter" && handleRenameSubmit()}
-                                />
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>Cancel</Button>
-                                <Button onClick={handleRenameSubmit} disabled={!renameName.trim() || renameName === projectToRename?.name}>
-                                    Save
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-
-                {/* Search */}
-                <div className="relative mb-8 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search projects..."
-                        className="pl-9"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-
-                {/* Grid */}
-                {loading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                    </div>
-                ) : filteredProjects.length === 0 ? (
-                    <div className="text-center py-20 border border-dashed rounded-lg">
-                        <h3 className="text-lg font-semibold mb-2">No projects found</h3>
-                        <p className="text-muted-foreground mb-6">
-                            {searchQuery ? "Try a different search query" : "Create your first project to get started"}
-                        </p>
-                        {!searchQuery && (
-                            <Button onClick={() => setIsDialogOpen(true)}>Create Project</Button>
-                        )}
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredProjects.map((project) => (
-                            <Card
-                                key={project.id}
-                                className="group cursor-pointer hover:shadow-lg transition-all hover:border-primary/50"
-                                onClick={() => navigate(`/projects/${project.id}`)}
-                            >
-                                <CardHeader className="p-0">
-                                    <div className="aspect-video bg-muted/50 w-full relative overflow-hidden rounded-t-lg">
-                                        {project.thumbnailUrl ? (
-                                            <img
-                                                src={project.thumbnailUrl}
-                                                alt={project.name}
-                                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                            />
-                                        ) : (
-                                            <div
-                                                className="w-full h-full"
-                                                style={generateGradient(project.name)}
-                                            />
-                                        )}
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-4 flex flex-col gap-2">
-                                    <div className="flex justify-between items-start gap-2">
-                                        <CardTitle className="text-lg group-hover:text-primary transition-colors line-clamp-1">
-                                            {project.name}
-                                        </CardTitle>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-2 text-muted-foreground hover:text-foreground">
-                                                    <MoreVertical className="w-4 h-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={(e) => handleRenameClick(e, project)}>
-                                                    <Edit className="w-4 h-4 mr-2" />
-                                                    Rename
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={(e) => handleDownloadProject(e, project.id)}>
-                                                    <Download className="w-4 h-4 mr-2" />
-                                                    Download
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={(e) => handleDeleteProject(e, project.id)}>
-                                                    <Trash className="w-4 h-4 mr-2" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                    {project.role && (
-                                        <div className="flex">
-                                            <span className={cn(
-                                                "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border",
-                                                project.role === 'OWNER' ? "bg-primary/10 text-primary border-primary/20" :
-                                                    project.role === 'EDITOR' ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
-                                                        "bg-muted text-muted-foreground border-border"
-                                            )}>
-                                                {project.role}
-                                            </span>
-                                        </div>
-                                    )}
-                                </CardContent>
-                                <CardFooter className="p-4 pt-0 text-xs text-muted-foreground">
-                                    Updated {new Date(project.createdAt).toLocaleDateString()}
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
-                )}
-            </main>
-        </div>
-    );
+  const loadProjects = async () => {
+    setLoading(true);
+    try { setProjects(await api.getProjects()); }
+    catch { toast({ title: "Couldn’t load projects", description: "Please refresh and try again.", variant: "destructive" }); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { void loadProjects(); }, []);
+  const filtered = useMemo(() => projects.filter((project) => project.name.toLowerCase().includes(query.trim().toLowerCase())), [projects, query]);
+  const openCreate = () => { setName(""); setSelected(null); setDialog("create"); };
+  const openRename = (project: ProjectSummaryResponse) => { setSelected(project); setName(project.name); setDialog("rename"); };
+  const saveProject = async () => {
+    const trimmed = name.trim(); if (!trimmed) return;
+    setSaving(true);
+    try {
+      if (dialog === "create") { const created = await api.createProject(trimmed); setProjects((current) => [created, ...current]); toast({ title: "Project created", description: "Your workspace is ready." }); }
+      else if (selected) { const updated = await api.updateProject(String(selected.id), trimmed); setProjects((current) => current.map((project) => project.id === selected.id ? { ...project, name: updated.name } : project)); toast({ title: "Project renamed" }); }
+      setDialog(null);
+    } catch { toast({ title: "Couldn’t save project", description: "Please try again.", variant: "destructive" }); }
+    finally { setSaving(false); }
+  };
+  const deleteProject = async (project: ProjectSummaryResponse) => {
+    if (!window.confirm(`Delete “${project.name}”? This cannot be undone.`)) return;
+    try { await api.deleteProject(String(project.id)); setProjects((current) => current.filter((item) => item.id !== project.id)); toast({ title: "Project deleted" }); }
+    catch { toast({ title: "Couldn’t delete project", variant: "destructive" }); }
+  };
+  const downloadProject = async (project: ProjectSummaryResponse) => {
+    try { const blob = await api.downloadProjectZip(String(project.id)); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${project.name}.zip`; link.click(); URL.revokeObjectURL(url); }
+    catch { toast({ title: "Couldn’t download project", variant: "destructive" }); }
+  };
+  const logout = () => { removeAuthToken(); removeUserInfo(); navigate("/login"); };
+  const user = getUserInfo();
+  return <div className="app-shell">
+    <header className="sticky top-0 z-20 border-b border-border/70 bg-background/85 backdrop-blur-xl"><div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 sm:px-7">
+      <button className="flex items-center gap-3 text-left" onClick={() => navigate("/projects")} aria-label="Project Companion home"><span className="grid h-9 w-9 place-items-center rounded-xl border border-primary/30 bg-primary/10 text-primary"><Braces className="h-5 w-5" /></span><span><span className="block text-sm font-semibold tracking-tight">Project Companion</span><span className="block text-[11px] text-muted-foreground">Your AI builder</span></span></button>
+      <div className="flex items-center gap-2"><Button className="hidden gap-2 sm:inline-flex" size="sm" onClick={openCreate}><Plus className="h-4 w-4" />New project</Button><DropdownMenu><DropdownMenuTrigger asChild><button className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Open account menu"><Avatar className="h-9 w-9 border border-border"><AvatarFallback className="bg-muted text-xs font-semibold text-foreground">{user?.name?.slice(0, 1).toUpperCase() || "U"}</AvatarFallback></Avatar></button></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-56"><div className="px-2 py-2"><p className="truncate text-sm font-medium">{user?.name || "Account"}</p><p className="truncate text-xs text-muted-foreground">{user?.username}</p></div><DropdownMenuSeparator /><DropdownMenuItem onClick={logout}><LogOut className="mr-2 h-4 w-4" />Sign out</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>
+    </div></header>
+    <main className="mx-auto max-w-[1440px] px-4 py-10 sm:px-7 lg:py-14">
+      <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><div><p className="eyebrow mb-3">Workspace</p><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Build with clarity.</h1><p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Create a project, describe the outcome, then inspect the generated code and preview in one focused workspace.</p></div><Button className="gap-2 sm:hidden" onClick={openCreate}><Plus className="h-4 w-4" />New project</Button></div>
+      <div className="mt-10 flex items-center gap-3"><div className="relative w-full max-w-md"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="h-10 border-border/70 bg-card pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects" aria-label="Search projects" /></div><span className="hidden text-xs text-muted-foreground sm:block">{projects.length} project{projects.length === 1 ? "" : "s"}</span></div>
+      {loading ? <div className="grid grid-cols-1 gap-4 pt-8 sm:grid-cols-2 xl:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-56 animate-pulse rounded-xl border border-border/70 bg-card" />)}</div> : filtered.length === 0 ? <EmptyProjects searching={Boolean(query)} onCreate={openCreate} /> : <div className="grid grid-cols-1 gap-4 pt-8 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/projects/${project.id}`)} onRename={() => openRename(project)} onDownload={() => void downloadProject(project)} onDelete={() => void deleteProject(project)} />)}</div>}
+    </main>
+    <ProjectDialog mode={dialog} name={name} saving={saving} onNameChange={setName} onClose={() => setDialog(null)} onSave={() => void saveProject()} />
+  </div>;
 }
+
+function ProjectCard({ project, onOpen, onRename, onDownload, onDelete }: { project: ProjectSummaryResponse; onOpen: () => void; onRename: () => void; onDownload: () => void; onDelete: () => void }) {
+  return <article className="surface group overflow-hidden rounded-xl transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_20px_50px_hsl(222_28%_3%_/_0.34)]"><button className="block w-full text-left" onClick={onOpen}><div className="relative h-28 overflow-hidden" style={project.thumbnailUrl ? undefined : generateGradient(project.name)}>{project.thumbnailUrl && <img src={project.thumbnailUrl} alt="" className="h-full w-full object-cover" />}<div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" /><div className="absolute bottom-3 left-4 rounded-md border border-white/10 bg-background/60 px-2 py-1 text-[11px] font-medium text-foreground backdrop-blur">{project.role || "PROJECT"}</div></div><div className="p-4 pb-3"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="truncate font-semibold tracking-tight">{project.name}</h2><p className="mt-1 text-xs text-muted-foreground">Created {formatDate(project.createdAt)}</p></div><ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary" /></div></div></button><div className="flex items-center justify-between border-t border-border/60 px-4 py-2"><span className="text-[11px] uppercase tracking-wider text-muted-foreground">AI workspace</span><DropdownMenu><DropdownMenuTrigger asChild><button className="icon-button" aria-label={`Actions for ${project.name}`}><MoreHorizontal className="h-4 w-4" /></button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={onRename}><Pencil className="mr-2 h-4 w-4" />Rename</DropdownMenuItem><DropdownMenuItem onClick={onDownload}><Download className="mr-2 h-4 w-4" />Download</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuItem className="text-destructive focus:text-destructive" onClick={onDelete}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div></article>;
+}
+function EmptyProjects({ searching, onCreate }: { searching: boolean; onCreate: () => void }) { return <div className="surface mt-8 flex min-h-[310px] flex-col items-center justify-center rounded-xl px-6 text-center"><span className="grid h-12 w-12 place-items-center rounded-xl border border-border bg-muted text-primary"><FolderPlus className="h-5 w-5" /></span><h2 className="mt-5 font-semibold">{searching ? "No matching projects" : "Your workspace is ready"}</h2><p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{searching ? "Try a different name or clear the search." : "Create your first project and tell your companion what you want to make."}</p>{!searching && <Button className="mt-6 gap-2" onClick={onCreate}><Plus className="h-4 w-4" />Create project</Button>}</div>; }
+function ProjectDialog({ mode, name, saving, onNameChange, onClose, onSave }: { mode: "create" | "rename" | null; name: string; saving: boolean; onNameChange: (value: string) => void; onClose: () => void; onSave: () => void }) { const creating = mode === "create"; return <Dialog open={mode !== null} onOpenChange={(open) => !open && onClose()}><DialogContent className="border-border/80 bg-card sm:max-w-md"><DialogHeader><DialogTitle>{creating ? "Create a project" : "Rename project"}</DialogTitle><DialogDescription>{creating ? "Give your new workspace a clear, memorable name." : "Choose a name that makes this workspace easy to find."}</DialogDescription></DialogHeader><div className="py-3"><label className="mb-2 block text-sm font-medium" htmlFor="project-name">Project name</label><Input id="project-name" autoFocus value={name} onChange={(event) => onNameChange(event.target.value)} onKeyDown={(event) => event.key === "Enter" && onSave()} placeholder="e.g. Customer portal" /></div><DialogFooter><Button variant="ghost" onClick={onClose}>Cancel</Button><Button disabled={!name.trim() || saving} onClick={onSave}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{creating ? "Create project" : "Save changes"}</Button></DialogFooter></DialogContent></Dialog>; }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { 
+import {
   Lightbulb, 
   Database, 
   FileEdit,
@@ -20,7 +20,7 @@ export const ChatEventRenderer = ({ event, isLoading }: { event: ChatEvent, isLo
       );
 
     case ChatEventType.TOOL_LOG:
-      return <CollapsibleEvent 
+      return <CollapsibleEvent
                 icon={<Database className="w-4 h-4" />} 
                 label="Read" 
                 event={event} 
@@ -37,7 +37,7 @@ export const ChatEventRenderer = ({ event, isLoading }: { event: ChatEvent, isLo
 
     case ChatEventType.MESSAGE:
       return (
-        <div className="prose prose-invert prose-sm max-w-none text-[#ececec] leading-relaxed mb-4">
+        <div className="prose prose-invert prose-sm max-w-none text-foreground leading-relaxed mb-4 prose-pre:border prose-pre:border-border prose-pre:bg-muted">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {event.content}
           </ReactMarkdown>
@@ -76,7 +76,7 @@ const CollapsibleEvent = ({
   const showButton = !hideToggle && hasMultipleFiles && !forceSingleLine;
 
   return (
-    <div className="flex flex-col gap-2 my-2">
+    <div className="my-2 flex flex-col gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
           <div className="text-[#949494] shrink-0">{icon}</div>

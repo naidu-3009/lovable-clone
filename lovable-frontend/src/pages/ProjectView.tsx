@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Code, Sparkles, LogOut, RotateCcw, Maximize2, RefreshCw, MoreVertical, Trash, Download, Edit } from "lucide-react";
+import { Code, Sparkles, LogOut, MoreVertical, Trash, Download, Edit, ArrowLeft, MessageSquare, Eye } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { ChatPanel, ChatMessage } from "@/components/ChatPanel";
 import { CodePanel } from "@/components/CodePanel";
@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { api, isAuthenticated, removeAuthToken, getUserInfo, removeUserInfo } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 import { RuntimeErrorAlert, RuntimeError } from "@/components/RuntimeErrorAlert";
 import { generateGradient, cn } from "@/lib/utils";
@@ -28,6 +28,7 @@ export function ProjectView() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("preview");
+  const [mobilePane, setMobilePane] = useState<"chat" | "workspace">("chat");
   const [updatedFiles, setUpdatedFiles] = useState<Map<string, string>>(new Map());
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [runtimeError, setRuntimeError] = useState<RuntimeError | null>(null);
@@ -286,15 +287,17 @@ Please analyze this error and fix the code to resolve it.`;
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
       {/* Header */}
-      <header className="h-12 shrink-0 border-b border-border/50 bg-panel flex items-center justify-between px-3">
-        <div className="flex items-center gap-2">
+      <header className="shrink-0 border-b border-border/70 bg-background/90 px-3 py-2 backdrop-blur-xl sm:px-4">
+        <div className="flex min-h-9 items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/projects")} className="h-8 w-8 shrink-0 text-muted-foreground" aria-label="Back to projects"><ArrowLeft className="h-4 w-4" /></Button>
           {project ? (
             <>
               <div
-                className="w-7 h-7 rounded-sm shadow-sm"
+                className="h-7 w-7 shrink-0 rounded-md shadow-sm"
                 style={generateGradient(project.name)}
               />
-              <span className="font-semibold text-sm">{project.name}</span>
+              <span className="truncate font-semibold text-sm">{project.name}</span>
             </>
           ) : (
             <>
@@ -304,7 +307,7 @@ Please analyze this error and fix the code to resolve it.`;
               <span className="font-semibold text-sm">Loading...</span>
             </>
           )}
-          <span className="text-muted-foreground text-xs ml-2">Previewing last saved version</span>
+          <span className="ml-2 hidden text-xs text-muted-foreground lg:inline">AI builder workspace</span>
           {project?.role !== 'VIEWER' && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -330,7 +333,7 @@ Please analyze this error and fix the code to resolve it.`;
           )}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
           
 
           {/* View Mode Toggle */}
@@ -342,7 +345,7 @@ Please analyze this error and fix the code to resolve it.`;
                 : "text-muted-foreground hover:text-foreground"
                 }`}
             >
-              <Sparkles className="w-3 h-3" />
+              <Eye className="w-3 h-3" />
               Preview
             </button>
             <button
@@ -358,7 +361,7 @@ Please analyze this error and fix the code to resolve it.`;
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           {project && (
             <div className="flex items-center gap-2 px-2 py-1 bg-muted/30 rounded-full border border-border/50">
               <Avatar className="h-6 w-6 border border-primary/20">
@@ -389,20 +392,10 @@ Please analyze this error and fix the code to resolve it.`;
             projectId={projectId}
             trigger={
               <Button variant="outline" size="sm" className="h-8 text-xs font-medium" disabled={project?.role === 'VIEWER'}>
-                Share
+                <span className="hidden sm:inline">Share</span><span className="sm:hidden">Members</span>
               </Button>
             }
           />
-          {project?.role !== 'VIEWER' && (
-            <>
-              <Button variant="outline" size="sm" className="h-8 text-xs">
-                Upgrade
-              </Button>
-              <Button size="sm" className="h-8 text-xs bg-primary hover:bg-primary/90">
-                Publish
-              </Button>
-            </>
-          )}
           <Button
             variant="ghost"
             size="icon"
@@ -411,15 +404,20 @@ Please analyze this error and fix the code to resolve it.`;
           >
             <LogOut className="w-4 h-4" />
           </Button>
+        </div></div>
+        <div className="mt-2 flex items-center rounded-lg border border-border/70 bg-muted/30 p-0.5 md:hidden">
+          <button onClick={() => setMobilePane("chat")} className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium ${mobilePane === "chat" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}><MessageSquare className="h-3 w-3" />Chat</button>
+          <button onClick={() => { setMobilePane("workspace"); setViewMode("preview"); }} className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium ${mobilePane === "workspace" && viewMode === "preview" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}><Eye className="h-3 w-3" />Preview</button>
+          <button onClick={() => { setMobilePane("workspace"); setViewMode("code"); }} className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium ${mobilePane === "workspace" && viewMode === "code" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}><Code className="h-3 w-3" />Code</button>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="relative flex-1 overflow-hidden">
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Chat Panel */}
-          <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
-            <div className="h-full border-r border-border/50 bg-panel">
+          <ResizablePanel defaultSize={34} minSize={25} maxSize={50} className="hidden md:block">
+            <div className="h-full border-r border-border/70 bg-panel">
               <ChatPanel
                 messages={messages}
                 onSendMessage={handleSendMessage}
@@ -430,10 +428,10 @@ Please analyze this error and fix the code to resolve it.`;
             </div>
           </ResizablePanel>
 
-          <ResizableHandle className="w-px bg-border/50 hover:bg-primary/50 transition-colors" />
+          <ResizableHandle className="hidden w-px bg-border/50 transition-colors hover:bg-primary/50 md:block" />
 
           {/* Code/Preview Panel */}
-          <ResizablePanel defaultSize={65} minSize={50} maxSize={75}>
+          <ResizablePanel defaultSize={66} minSize={50} maxSize={75}>
             <div className="h-full">
               <div className="h-full relative">
                 <div className={cn("h-full absolute inset-0", viewMode !== "code" && "hidden")}>
@@ -451,6 +449,9 @@ Please analyze this error and fix the code to resolve it.`;
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
+        {mobilePane === "chat" && <div className="absolute inset-x-0 bottom-0 top-[96px] z-10 md:hidden">
+          <ChatPanel messages={messages} onSendMessage={handleSendMessage} isStreaming={isStreaming} isLoading={isLoadingHistory} readOnly={project?.role === "VIEWER"} />
+        </div>}
       </div>
 
       {/* Rename Dialog */}

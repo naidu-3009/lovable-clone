@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Bot, ThumbsUp, ThumbsDown, Copy, RotateCcw, MoreHorizontal, FileCode } from "lucide-react";
+import { Send, Loader2, Bot, Copy, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
@@ -65,7 +65,11 @@ export function ChatPanel({ messages, onSendMessage, isStreaming, isLoading, rea
   };
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex h-full flex-col bg-panel">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/70 px-4">
+        <div><p className="text-sm font-semibold">Companion</p><p className="text-[11px] text-muted-foreground">Plan, build, refine</p></div>
+        {isStreaming && <span className="flex items-center gap-1.5 text-[11px] font-medium text-primary"><Loader2 className="h-3 w-3 animate-spin" />Working</span>}
+      </div>
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
@@ -74,10 +78,10 @@ export function ChatPanel({ messages, onSendMessage, isStreaming, isLoading, rea
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center mb-4">
+            <div className="grid h-14 w-14 place-items-center rounded-xl border border-primary/20 bg-primary/10 mb-4">
               <Bot className="w-7 h-7 text-primary" />
             </div>
-            <h3 className="text-base font-medium mb-1">Start a conversation</h3>
+            <h3 className="text-base font-semibold mb-1">What are we building?</h3>
             <p className="text-sm text-muted-foreground max-w-xs">
               Describe what you want to build or modify
             </p>
@@ -94,7 +98,7 @@ export function ChatPanel({ messages, onSendMessage, isStreaming, isLoading, rea
       </div>
 
       {/* Input Area */}
-      <div className="shrink-0 p-3 border-t border-border/50 bg-card">
+      <div className="shrink-0 border-t border-border/70 bg-card p-3">
         <form onSubmit={handleSubmit} className="relative">
           <Textarea
             ref={textareaRef}
@@ -102,7 +106,7 @@ export function ChatPanel({ messages, onSendMessage, isStreaming, isLoading, rea
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
             placeholder={readOnly ? "You have view-only access to this project" : "Describe what you want to build..."}
-            className="min-h-[48px] max-h-[200px] pr-12 resize-none bg-muted/30 border-border/30 focus:border-primary/50 rounded-xl text-sm"
+            className="min-h-[52px] max-h-[200px] resize-none border-border/70 bg-muted/40 pr-12 text-sm shadow-inner"
             disabled={isStreaming || readOnly}
             rows={1}
           />
@@ -121,8 +125,8 @@ export function ChatPanel({ messages, onSendMessage, isStreaming, isLoading, rea
         </form>
 
         <div className="flex items-center justify-between mt-2 px-1">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <span>✨ AI-Powered Design System</span>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Sparkles className="h-3 w-3 text-primary" /><span>Enter to send · Shift + Enter for a new line</span>
           </div>
           {isStreaming && (
             <span className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
@@ -148,11 +152,11 @@ function MessageItem({ message, isStreaming }: { message: ChatMessage, isStreami
     : liveEvents;
 
   return (
-    <div className={`p-5 border-b border-border/10 ${message.role === 'user' ? 'bg-muted/10' : 'bg-background'}`}>
+    <div className={`border-b border-border/40 p-4 ${message.role === 'user' ? 'bg-muted/20' : 'bg-panel'}`}>
       <div className="max-w-4xl mx-auto">
         {message.role === "user" ? (
           <div className="flex flex-col items-end gap-2">
-            <div className="bg-primary/10 text-primary-foreground text-sm py-2.5 px-4 rounded-2xl rounded-tr-none border border-primary/20 max-w-[85%]">
+            <div className="max-w-[90%] rounded-2xl rounded-tr-sm border border-primary/25 bg-primary/10 px-3.5 py-2.5 text-sm">
               <p className="text-foreground leading-relaxed whitespace-pre-wrap">{message.content}</p>
             </div>
             {message.createdAt && (
@@ -181,18 +185,9 @@ function MessageItem({ message, isStreaming }: { message: ChatMessage, isStreami
             </div>
 
             {/* Action buttons for assistant message */}
-            {!message.isStreaming && eventsToRender.length > 0 && (
+            {!message.isStreaming && message.content && eventsToRender.length > 0 && (
               <div className="flex items-center gap-1 pt-2">
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                  <ThumbsUp className="w-3.5 h-3.5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                  <ThumbsDown className="w-3.5 h-3.5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                <Button variant="ghost" size="icon" aria-label="Copy assistant response" onClick={() => void navigator.clipboard.writeText(message.content)} className="h-8 w-8 text-muted-foreground hover:text-primary">
                   <Copy className="w-3.5 h-3.5" />
                 </Button>
               </div>

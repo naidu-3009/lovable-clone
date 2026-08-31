@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Loader2, Mail, Sparkles, User, Lock } from "lucide-react";
+import { Loader2, Mail, User, Lock } from "lucide-react";
 import { api, setAuthToken, setUserInfo } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { AuthLayout } from "@/components/AuthLayout";
 
 export default function Signup() {
     const [name, setName] = useState("");
@@ -50,24 +51,7 @@ export default function Signup() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-            {/* Background gradient */}
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute top-1/3 left-1/3 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-            </div>
-
-            <div className="relative w-full max-w-md">
-                {/* Card */}
-                <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-2xl">
-                    {/* Logo */}
-                    <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/20 mb-5">
-                            <Sparkles className="w-7 h-7 text-primary" />
-                        </div>
-                        <h1 className="text-2xl font-semibold text-foreground mb-2">Create an account</h1>
-                        <p className="text-muted-foreground text-sm">Start building your next big idea</p>
-                    </div>
-
+        <AuthLayout title="Create your workspace" description="Start building products with a thoughtful AI collaborator.">
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-2">
                             <Label htmlFor="name" className="text-sm font-medium text-foreground">
@@ -81,7 +65,7 @@ export default function Signup() {
                                     placeholder="John Doe"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="pl-10 h-12 bg-muted/50 border-border/50 focus:border-primary rounded-xl text-sm"
+                                    className="h-11 border-border/70 bg-muted/40 pl-10 text-sm"
                                     disabled={isLoading}
                                 />
                             </div>
@@ -99,7 +83,7 @@ export default function Signup() {
                                     placeholder="you@example.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="pl-10 h-12 bg-muted/50 border-border/50 focus:border-primary rounded-xl text-sm"
+                                    className="h-11 border-border/70 bg-muted/40 pl-10 text-sm"
                                     disabled={isLoading}
                                 />
                             </div>
@@ -117,7 +101,7 @@ export default function Signup() {
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="pl-10 h-12 bg-muted/50 border-border/50 focus:border-primary rounded-xl text-sm"
+                                    className="h-11 border-border/70 bg-muted/40 pl-10 text-sm"
                                     disabled={isLoading}
                                 />
                             </div>
@@ -126,7 +110,7 @@ export default function Signup() {
                         <Button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-xl text-sm"
+                            className="h-11 w-full font-semibold shadow-[0_8px_24px_hsl(var(--primary)/0.16)]"
                         >
                             {isLoading ? (
                                 <>
@@ -139,14 +123,12 @@ export default function Signup() {
                         </Button>
                     </form>
 
-                    <p className="text-center text-sm text-muted-foreground mt-6">
+                    <p className="mt-6 text-center text-sm text-muted-foreground">
                         Already have an account?{" "}
                         <Link to="/login" className="text-primary hover:underline font-medium">
                             Sign in
                         </Link>
                     </p>
-                </div>
-            </div>
-        </div>
+        </AuthLayout>
     );
 }
