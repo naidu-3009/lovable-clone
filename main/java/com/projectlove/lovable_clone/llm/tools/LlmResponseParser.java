@@ -67,7 +67,9 @@ public class LlmResponseParser {
                     builder.type(ChatEventType.TOOL_LOG);
                     builder.metadata(attrMap.get("args")); // Store raw file list in metadata
                 }
-                default -> { continue; }
+                default -> {
+                    continue;
+                }
             }
 
             events.add(builder.build());

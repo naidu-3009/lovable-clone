@@ -25,6 +25,7 @@ import reactor.core.scheduler.Schedulers;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,6 +72,9 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 
         CodeGenerationTools codeGenerationTools=new CodeGenerationTools(projectFileService,projectId);
 
+        AtomicReference<Long> startTime=new AtomicReference<Long>(System.currentTimeMillis());
+        AtomicReference<Long> endTime=new AtomicReference<>(0L);
+
         return chatClient.prompt()
                 .system(PromptUtils.CODE_GENERATION_SYSTEM_PROMPT)
                 .user(userPrompt)
@@ -84,10 +88,16 @@ public class AiGenerationServiceImpl implements AiGenerationService {
                 .chatResponse()
                 .doOnNext(response->{
                     String content=response.getResult().getOutput().getText();
-                    fullResponseBuffer.append(content);
+                    if(content!=null && !content.isEmpty()&&endTime.get()==0){ //first non empty chunk we received
+                        endTime.set(System.currentTimeMillis());
+                    }
+
+                        fullResponseBuffer.append(content);
                 })
                 .doOnComplete(() -> {
-                    finalizeChats(userPrompt,chatSession,fullResponseBuffer.toString(),projectId);
+                    long duration=(endTime.get()-startTime.get())/1000;
+
+                    finalizeChats(userPrompt,chatSession,fullResponseBuffer.toString(),duration);
 
                 })
                 .doOnError(error ->
@@ -130,8 +140,8 @@ public class AiGenerationServiceImpl implements AiGenerationService {
 
 
 
-private void finalizeChats(String userMessage, ChatSession chatSession,String fullText,Long projectId){
-
+private void finalizeChats(String userMessage, ChatSession chatSession,String fullText,Long duration){
+        Long projectId=chatSession.getProject().getId();
    //saving the user message
     chatMessageRepository.save(
             ChatMessage.builder()
@@ -144,10 +154,18 @@ private void finalizeChats(String userMessage, ChatSession chatSession,String fu
     ChatMessage assistantChatMessage=ChatMessage.builder()
             .role(MessageRole.ASSISTANT)
             .chatSession(chatSession)
+            .content("Assistant message here")
             .build();
 
-    List<ChatEvent> chatEventList= llmResponseParser.parseChatEvents(fullText,assistantChatMessage);
+    chatMessageRepository.save(assistantChatMessage);
 
+    List<ChatEvent> chatEventList= llmResponseParser.parseChatEvents(fullText,assistantChatMessage);
+    chatEventList.addFirst(ChatEvent.builder()
+                    .type(ChatEventType.THOUGHT)
+                    .chatMessage(assistantChatMessage)
+                    .content("Thought for "+duration+"s")
+                    .sequenceOrder(0)
+                    .build());
     chatEventList.stream()
             .filter(e->e.getType()== ChatEventType.FILE_EDIT)
             .forEach(e->projectFileService.saveFile(projectId,e.getFilePath(),e.getContent()));

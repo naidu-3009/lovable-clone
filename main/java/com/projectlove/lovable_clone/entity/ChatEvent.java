@@ -27,7 +27,9 @@ public class ChatEvent {
 
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+//    @Column(nullable = false)
+    @Column(name = "chat_event_type", nullable = false)
+
     ChatEventType type;
 
     @Column(nullable = false)
