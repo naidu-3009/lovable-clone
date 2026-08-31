@@ -1,1 +1,3 @@
-application.yaml
+com/projectlove/lovable_clone/application.yaml
+.env
+/application.yaml
