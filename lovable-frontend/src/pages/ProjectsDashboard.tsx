@@ -39,18 +39,18 @@ export function ProjectsDashboard() {
     setSaving(true);
     try {
       if (dialog === "create") { const created = await api.createProject(trimmed); setProjects((current) => [created, ...current]); toast({ title: "Project created", description: "Your workspace is ready." }); }
-      else if (selected) { const updated = await api.updateProject(String(selected.id), trimmed); setProjects((current) => current.map((project) => project.id === selected.id ? { ...project, name: updated.name } : project)); toast({ title: "Project renamed" }); }
+      else if (selected) { const updated = await api.updateProject(String(selected.id), trimmed); setProjects((current) => current.map((project) => project.projectId === selected.id ? { ...project, name: updated.name } : project)); toast({ title: "Project renamed" }); }
       setDialog(null);
     } catch { toast({ title: "Couldn’t save project", description: "Please try again.", variant: "destructive" }); }
     finally { setSaving(false); }
   };
   const deleteProject = async (project: ProjectSummaryResponse) => {
     if (!window.confirm(`Delete “${project.name}”? This cannot be undone.`)) return;
-    try { await api.deleteProject(String(project.id)); setProjects((current) => current.filter((item) => item.id !== project.id)); toast({ title: "Project deleted" }); }
+    try { await api.deleteProject(String(project.projectId)); setProjects((current) => current.filter((item) => item.id !== project.projectId)); toast({ title: "Project deleted" }); }
     catch { toast({ title: "Couldn’t delete project", variant: "destructive" }); }
   };
   const downloadProject = async (project: ProjectSummaryResponse) => {
-    try { const blob = await api.downloadProjectZip(String(project.id)); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${project.name}.zip`; link.click(); URL.revokeObjectURL(url); }
+    try { const blob = await api.downloadProjectZip(String(project.projectId)); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${project.name}.zip`; link.click(); URL.revokeObjectURL(url); }
     catch { toast({ title: "Couldn’t download project", variant: "destructive" }); }
   };
   const logout = () => { removeAuthToken(); removeUserInfo(); navigate("/login"); };
@@ -63,7 +63,7 @@ export function ProjectsDashboard() {
     <main className="mx-auto max-w-[1440px] px-4 py-10 sm:px-7 lg:py-14">
       <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><div><p className="eyebrow mb-3">Workspace</p><h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Build with clarity.</h1><p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Create a project, describe the outcome, then inspect the generated code and preview in one focused workspace.</p></div><Button className="gap-2 sm:hidden" onClick={openCreate}><Plus className="h-4 w-4" />New project</Button></div>
       <div className="mt-10 flex items-center gap-3"><div className="relative w-full max-w-md"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="h-10 border-border/70 bg-card pl-9" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search projects" aria-label="Search projects" /></div><span className="hidden text-xs text-muted-foreground sm:block">{projects.length} project{projects.length === 1 ? "" : "s"}</span></div>
-      {loading ? <div className="grid grid-cols-1 gap-4 pt-8 sm:grid-cols-2 xl:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-56 animate-pulse rounded-xl border border-border/70 bg-card" />)}</div> : filtered.length === 0 ? <EmptyProjects searching={Boolean(query)} onCreate={openCreate} /> : <div className="grid grid-cols-1 gap-4 pt-8 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/projects/${project.id}`)} onRename={() => openRename(project)} onDownload={() => void downloadProject(project)} onDelete={() => void deleteProject(project)} />)}</div>}
+      {loading ? <div className="grid grid-cols-1 gap-4 pt-8 sm:grid-cols-2 xl:grid-cols-3">{[1, 2, 3].map((item) => <div key={item} className="h-56 animate-pulse rounded-xl border border-border/70 bg-card" />)}</div> : filtered.length === 0 ? <EmptyProjects searching={Boolean(query)} onCreate={openCreate} /> : <div className="grid grid-cols-1 gap-4 pt-8 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((project) => <ProjectCard key={project.projectId} project={project} onOpen={() => navigate(`/projects/${project.projectId}`)} onRename={() => openRename(project)} onDownload={() => void downloadProject(project)} onDelete={() => void deleteProject(project)} />)}</div>}
     </main>
     <ProjectDialog mode={dialog} name={name} saving={saving} onNameChange={setName} onClose={() => setDialog(null)} onSave={() => void saveProject()} />
   </div>;

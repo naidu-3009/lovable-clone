@@ -12,10 +12,9 @@ import java.util.List;
 
 public record ChatResponse (
     Long id,
-    ChatSession chatSession,
     String content,
     Integer tokensUsed,
     Instant createdAt,
     MessageRole role,
-    List<ChatEvent> events
+    List<ChatEventResponse> events
     ){}

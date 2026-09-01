@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 
 public record ChatEventResponse(@Id
                                 Long id,
-                                ChatEventType chatEventType,
+                                ChatEventType type,
                                 Integer sequenceOrder,
                                 String content,
                                 String metadata,

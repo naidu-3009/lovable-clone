@@ -1,6 +1,7 @@
 package com.projectlove.lovable_clone.Services.impl;
 
 import com.projectlove.lovable_clone.Services.ChatService;
+import com.projectlove.lovable_clone.dto.chat.ChatEventResponse;
 import com.projectlove.lovable_clone.dto.chat.ChatResponse;
 import com.projectlove.lovable_clone.entity.ChatMessage;
 import com.projectlove.lovable_clone.entity.ChatSession;

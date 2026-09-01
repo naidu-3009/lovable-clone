@@ -14,13 +14,15 @@ import org.springframework.boot.json.JsonWriter;
 public interface ProjectMemberMapper {
 
     @Mapping(source = "id",target = "userId")
-    @Mapping(target="projectMemberRole",constant = "OWNER")
+    @Mapping(target="role",constant = "OWNER")
     MemberResponse  toMemberResponseFromOwner(User owner);
+
+
     @Mapping(source = "user.id",target = "userId")
     @Mapping(source = "user.username",target = "username")
     @Mapping(source = "user.name",target = "name")
     @Mapping(source = "project.id",target = "projectId")
-    @Mapping(source = "projectMemberRole",target = "projectMemberRole")
+    @Mapping(source = "projectMemberRole",target = "role")
     MemberResponse toMemberResponseFromMember(ProjectMember member);
 
 

@@ -7,7 +7,7 @@ public record MemberResponse(
         String username,
         String name,
         String avatarUrl,
-        ProjectMemberRole projectMemberRole,
+        ProjectMemberRole role,
         String projectId
 ) {
 }

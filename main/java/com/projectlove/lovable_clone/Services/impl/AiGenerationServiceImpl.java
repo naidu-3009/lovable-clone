@@ -1,6 +1,7 @@
 package com.projectlove.lovable_clone.Services.impl;
 
 import com.projectlove.lovable_clone.Services.AiGenerationService;
+import com.projectlove.lovable_clone.dto.chat.StreamResponse;
 import com.projectlove.lovable_clone.entity.*;
 import com.projectlove.lovable_clone.enums.ChatEventType;
 import com.projectlove.lovable_clone.enums.MessageRole;
@@ -58,7 +59,7 @@ public class AiGenerationServiceImpl implements AiGenerationService {
     @Override
     @PreAuthorize("@security.canEditProject(#projectId)")//here if we want to pass the arguments from the below method call we use # telling use the parameters passed in below function
     //as parameters
-    public Flux<String> streamResponse(String userPrompt, Long projectId) {
+    public Flux<StreamResponse> streamResponse(String userPrompt, Long projectId) {
             Long userId=authUtil.getCurrentUserId();
            ChatSession chatSession= createChatSessionIfNotExists(projectId,userId);
 
@@ -106,7 +107,10 @@ public class AiGenerationServiceImpl implements AiGenerationService {
                                 projectId,
                                 error
                         )
-                )                .map(response-> Objects.requireNonNull(response.getResult().getOutput().getText()));
+                )
+                .map(response-> {String text=Objects.requireNonNull(response.getResult().getOutput().getText())
+                ;
+                return new StreamResponse(text !=null?text:"");});
 
     }
 

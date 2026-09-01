@@ -62,7 +62,7 @@ public class FileTreeContextAdvisor implements StreamAdvisor {
         }
 
 
-        List<FileNode> fileTree=projectFileService.getFileTree(projectId);
+        List<FileNode> fileTree=projectFileService.getFileTree(projectId).files();
         String fileTreeContext="\n\n ===========File Tree========\n"+fileTree.toString();
         finalAugmentedPrompt.add(new SystemMessage(fileTreeContext));
 
