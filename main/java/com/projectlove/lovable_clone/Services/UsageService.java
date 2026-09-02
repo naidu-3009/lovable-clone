@@ -6,7 +6,12 @@ import com.projectlove.lovable_clone.dto.subscription.UsageTodayResponse;
 import org.jspecify.annotations.Nullable;
 
 public interface UsageService {
-     UsageTodayResponse getTodayUsageOfUser(Long userId);
 
-    PlanLimitResponse getCurrentSubscriptionLimits(Long userId);
+    void checkDailyTokensUsage();
+    void recordTokenUsage(Long id, int totalTokens);
+
+    @Nullable PlanLimitResponse getCurrentSubscriptionLimits(Long userId);
+
+    @Nullable UsageTodayResponse getTodayUsageOfUser(Long userId);
 }
+

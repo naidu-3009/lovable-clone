@@ -25,6 +25,6 @@ public class Plan {
     Integer maxProjects;
     Integer maxTokensPerDay;
     Integer maxPreviews;
-    Boolean unlimitedAI;
+    Boolean unlimitedAi;
     Boolean active;
 }
