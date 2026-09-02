@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lovable-clone
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-service
+  namespace: lovable-clone
+spec:
+  type: ExternalName
+  externalName: host.docker.internal # Points to your laptop/host
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+
