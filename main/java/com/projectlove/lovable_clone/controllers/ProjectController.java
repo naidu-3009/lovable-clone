@@ -50,7 +50,6 @@ public class ProjectController {
     public ResponseEntity<Void> deleteProject(@PathVariable Long projectId){
         projectService.softDelete(projectId);
         return ResponseEntity.noContent().build();
-
     }
 
 }
