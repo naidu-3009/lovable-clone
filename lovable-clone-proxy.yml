@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lovable-clone-proxy
+  namespace: lovable-clone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lovable-clone-proxy
+  template:
+    metadata:
+      labels:
+        app: lovable-clone-proxy
+    spec:
+      containers:
+        - name: proxy
+          image: lovable-clone-proxy:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+          env:
+            - name: REDIS_URL
+              # Refers to the service in the same namespace
+              value: "redis://redis-service:6379"
+          ports:
+            - containerPort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: lovable-clone-proxy-svc
+  namespace: lovable-clone
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: lovable-clone-proxy
