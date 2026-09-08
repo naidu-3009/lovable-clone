@@ -4,7 +4,6 @@ metadata:
   name: lovable-clone
 
 ---
-#this is regarding kubernetes
 apiVersion: v1
 kind: Service
 metadata:
@@ -12,7 +11,7 @@ metadata:
   namespace: lovable-clone
 spec:
   type: ExternalName
-  externalName: host.docker.internal # Points to your laptop/host
+  externalName: host.docker.internal
   ports:
     - port: 9000
       targetPort: 9000
