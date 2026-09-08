@@ -1,6 +1,8 @@
 package com.projectlove.lovable_clone.controllers;
 
+import com.projectlove.lovable_clone.Services.DeploymentService;
 import com.projectlove.lovable_clone.Services.ProjectService;
+import com.projectlove.lovable_clone.dto.deploy.DeployResponse;
 import com.projectlove.lovable_clone.dto.projects.ProjectRequest;
 import com.projectlove.lovable_clone.dto.projects.ProjectResponse;
 import com.projectlove.lovable_clone.dto.projects.ProjectSummaryResponse;
@@ -21,6 +23,7 @@ import java.util.List;
 @FieldDefaults(makeFinal = true,level = AccessLevel.PRIVATE)
 public class ProjectController {
      ProjectService projectService;
+     DeploymentService deploymentService;
      AuthUtil authUtil;
 
     @GetMapping
@@ -50,6 +53,12 @@ public class ProjectController {
     public ResponseEntity<Void> deleteProject(@PathVariable Long projectId){
         projectService.softDelete(projectId);
         return ResponseEntity.noContent().build();
+    }
+
+
+    @PostMapping("/{id}/deploy")
+    public ResponseEntity<DeployResponse> deployProject(@PathVariable Long id){
+        return ResponseEntity.ok(deploymentService.deploy(id));
     }
 
 }
