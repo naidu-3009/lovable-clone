@@ -1,6 +1,4 @@
 package com.projectlove.lovable_clone.Services.impl;
-
-
 import com.projectlove.lovable_clone.Services.DeploymentService;
 import com.projectlove.lovable_clone.dto.deploy.DeployResponse;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -11,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-
+import io.lettuce.core.api.StatefulRedisConnection;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,8 +25,10 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
 
     private final KubernetesClient client;
     private final StringRedisTemplate redisTemplate;
+   private ByteArrayOutputStream output = new ByteArrayOutputStream();
+   private ByteArrayOutputStream error = new ByteArrayOutputStream();
 
-    private static final String NAMESPACE = "shuttle-apps";
+    private static final String NAMESPACE = "lovable-clone";
     private static final String POOL_LABEL = "status";
     private static final String PROJECT_LABEL = "project-id";
     private static final String IDLE = "idle";
@@ -53,6 +53,7 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
     }
 
     private DeployResponse claimAndStartNewPod(Long projectId, String domain) {
+
         Pod pod = client.pods().inNamespace(NAMESPACE)
                 .withLabel(POOL_LABEL, IDLE)
                 .list().getItems().stream()
@@ -71,34 +72,38 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
         try {
             // Syncer Commands
             String initialSyncCmd = String.format(
-                    "mc mirror --overwrite myminio/projects/%d/ /app/",
+                    "mc mirror --overwrite myminio/projectslovable/%d/react-vite-tailwind-daisyui-starter-main/ /app/",
                     projectId);
 
             log.info("Starting initial sync for project {} in pod {}", projectId, podName);
             execCommand(podName, SYNCER_CONTAINER, "sh", "-c", initialSyncCmd);
 
             String watchCmd = String.format(
-                    "nohup mc mirror --overwrite --watch myminio/projects/%d/ /app/ > /app/sync.log 2>&1 &",
+                    "nohup mc mirror --overwrite --watch myminio/projectslovable/%d/react-vite-tailwind-daisyui-starter-main/ /app/ > /app/sync.log 2>&1 &",
                     projectId);
             execCommand(podName, SYNCER_CONTAINER, "sh", "-c", watchCmd);
 
             // Runner Commands
-            String startCmd = "npm install && nohup npm run dev -- --host 0.0.0.0 --port 5173 > /app/dev.log 2>&1 &";
+            String installCmd = "cd /app && pnpm install --reporter=append-only";
 
+            log.info("Installing dependencies for project {}...", projectId);
+            execCommand(
+                    podName,
+                    RUNNER_CONTAINER,
+                    "sh", "-c", installCmd
+            );
+
+
+//            String startCmd =
+//                    "cd /app && nohup npm run dev -- --host 0.0.0.0 --port 5173 > /app/dev.log 2>&1 &";
+
+            String startCmd = "nohup pnpm run dev --host 0.0.0.0 --port 5173 > /app/dev.log 2>&1 &";
             log.info("Starting dev server for project {}...", projectId);
-            execCommand(podName, RUNNER_CONTAINER, "sh", "-c", startCmd);
-
-            // The exec calls above are fire-and-forget for backgrounded commands
-            // (see execCommand) — they don't confirm the dev server actually came
-            // up. Poll the pod's port before declaring success.
-            String podIp = pod.getStatus().getPodIP();
-            if (podIp == null) {
-                throw new RuntimeException("Pod is running but has no IP!");
-            }
-            boolean ready = waitForDevServer(podIp, 5173, Duration.ofSeconds(20));
-            if (!ready) {
-                throw new RuntimeException("Dev server did not come up on pod " + podName + " within 20s");
-            }
+            execCommand(
+                    podName,
+                    RUNNER_CONTAINER,
+                    "sh", "-c", startCmd
+            );
 
             registerRoute(domain, pod);
 
@@ -114,11 +119,35 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
 
     private void registerRoute(String domain, Pod pod) {
         String podIp = pod.getStatus().getPodIP();
-        if (podIp == null) throw new RuntimeException("Pod is running but has no IP!");
 
-        redisTemplate.opsForValue().set("route:" + domain, podIp + ":5173", 6, TimeUnit.HOURS);
+        if (podIp == null) {
+            throw new RuntimeException("Pod is running but has no IP!");
+        }
+
+        String key = "route:" + domain;
+        String value = podIp + ":5173";
+
+        log.info("Registering route: {} -> {}", key, value);
+
+        Boolean result = redisTemplate.opsForValue().setIfAbsent(
+                key,
+                value,
+                6,
+                TimeUnit.HOURS
+        );
+//        redisTemplate.opsForValue().set(
+//                key,
+//                value,
+//                6,
+//                TimeUnit.HOURS
+//        );
+
+
+
+//        log.info("Redis route write result: {}", result);
+        log.info("Redis value seen by Spring immediately after write: {}",
+                redisTemplate.opsForValue().get(key));
     }
-
 
     private void execCommand(String podName, String container, String... command) {
         log.debug("Exec in {}:{} -> {}", podName, container, String.join(" ", command));
@@ -126,8 +155,8 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
         CompletableFuture<String> data = new CompletableFuture<>();
         try (ExecWatch ignored = client.pods().inNamespace(NAMESPACE).withName(podName)
                 .inContainer(container)
-                .writingOutput(new ByteArrayOutputStream())
-                .writingError(new ByteArrayOutputStream())
+                .writingOutput(System.out)
+                .writingError(System.err)
                 .usingListener(new ExecListener() {
                     @Override
                     public void onClose(int code, String reason) {
@@ -136,36 +165,19 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
                 })
                 .exec(command)) {
 
-            // Wait briefly to ensure command fired (Fabric8 exec is async)
-            // For long running background jobs (nohup), we don't wait for "Done"
             if (command[command.length - 1].trim().endsWith("&")) {
                 Thread.sleep(500);
             } else {
-                data.get(30, TimeUnit.SECONDS); // Block for synchronous setup commands (npm install)
+                data.get(5, TimeUnit.MINUTES);
             }
+
+            log.info("Exec output: {}", output);
+            log.error("Exec error: {}", error);
 
         } catch (Exception e) {
             log.error("Exec failed", e);
             throw new RuntimeException("Pod Execution Failed", e);
         }
-    }
-
-    private boolean waitForDevServer(String podIp, int port, Duration timeout) {
-        long deadline = System.currentTimeMillis() + timeout.toMillis();
-        while (System.currentTimeMillis() < deadline) {
-            try (Socket s = new Socket()) {
-                s.connect(new InetSocketAddress(podIp, port), 1000);
-                return true;
-            } catch (IOException ignored) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    return false;
-                }
-            }
-        }
-        return false;
     }
 
     Pod findActivePod(Long projectId) {
