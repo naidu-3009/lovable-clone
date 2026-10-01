@@ -45,6 +45,9 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
         Pod existingPod = findActivePod(projectId);
 
         if(existingPod != null) {
+            execCommand(existingPod.getMetadata().getName(), SYNCER_CONTAINER, "mc", "mirror", "--overwrite",
+                    String.format("myminio/projectslovable/%d/react-vite-tailwind-daisyui-starter-main/", projectId),
+                    "/app/");
             registerRoute(domain, existingPod);
             return new DeployResponse("http://"+domain+":"+REVERSE_PROXY_PORT);
         }
@@ -71,17 +74,23 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
 
         try {
             // Syncer Commands
-            String initialSyncCmd = String.format(
-                    "mc mirror --overwrite myminio/projectslovable/%d/react-vite-tailwind-daisyui-starter-main/ /app/",
-                    projectId);
+//            String initialSyncCmd = String.format(
+//                    "mc mirror --overwrite myminio/projectslovable/%d/react-vite-tailwind-daisyui-starter-main/ /app/",
+//                    projectId);
+//
+//            log.info("Starting initial sync for project {} in pod {}", projectId, podName);
+//            execCommand(podName, SYNCER_CONTAINER, "sh", "-c", initialSyncCmd);
+
+            String src = String.format(
+                    "myminio/projectslovable/%d/react-vite-tailwind-daisyui-starter-main/", projectId);
 
             log.info("Starting initial sync for project {} in pod {}", projectId, podName);
-            execCommand(podName, SYNCER_CONTAINER, "sh", "-c", initialSyncCmd);
+            execCommand(podName, SYNCER_CONTAINER, "mc", "mirror", "--overwrite", src, "/app/");
 
-            String watchCmd = String.format(
-                    "nohup mc mirror --overwrite --watch myminio/projectslovable/%d/react-vite-tailwind-daisyui-starter-main/ /app/ > /app/sync.log 2>&1 &",
-                    projectId);
-            execCommand(podName, SYNCER_CONTAINER, "sh", "-c", watchCmd);
+//            String watchCmd = String.format(
+//                    "nohup mc mirror --overwrite --watch myminio/projectslovable/%d/react-vite-tailwind-daisyui-starter-main/ /app/ > /app/sync.log 2>&1 &",
+//                    projectId);
+//            execCommand(podName, SYNCER_CONTAINER, "sh", "-c", watchCmd);
 
             // Runner Commands
             String installCmd = "cd /app && pnpm install --reporter=append-only";
@@ -129,7 +138,7 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
 
         log.info("Registering route: {} -> {}", key, value);
 
-        Boolean result = redisTemplate.opsForValue().setIfAbsent(
+        redisTemplate.opsForValue().set(
                 key,
                 value,
                 6,
@@ -149,34 +158,54 @@ public class KubernetesDeploymentServiceImpl implements DeploymentService {
                 redisTemplate.opsForValue().get(key));
     }
 
-    private void execCommand(String podName, String container, String... command) {
-        log.debug("Exec in {}:{} -> {}", podName, container, String.join(" ", command));
+//    private void execCommand(String podName, String container, String... command) {
+//        log.debug("Exec in {}:{} -> {}", podName, container, String.join(" ", command));
+//
+//        CompletableFuture<String> data = new CompletableFuture<>();
+//        try (ExecWatch ignored = client.pods().inNamespace(NAMESPACE).withName(podName)
+//                .inContainer(container)
+//                .writingOutput(System.out)
+//                .writingError(System.err)
+//                .usingListener(new ExecListener() {
+//                    @Override
+//                    public void onClose(int code, String reason) {
+//                        data.complete("Done");
+//                    }
+//                })
+//                .exec(command)) {
+//
+//            if (command[command.length - 1].trim().endsWith("&")) {
+//                Thread.sleep(500);
+//            } else {
+//                data.get(5, TimeUnit.MINUTES);
+//            }
+//
+//            log.info("Exec output: {}", output);
+//            log.error("Exec error: {}", error);
+//
+//        } catch (Exception e) {
+//            log.error("Exec failed", e);
+//            throw new RuntimeException("Pod Execution Failed", e);
+//        }
+//    }
 
-        CompletableFuture<String> data = new CompletableFuture<>();
-        try (ExecWatch ignored = client.pods().inNamespace(NAMESPACE).withName(podName)
+    private void execCommand(String podName, String container, String... command) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+        try (ExecWatch watch = client.pods().inNamespace(NAMESPACE).withName(podName)
                 .inContainer(container)
-                .writingOutput(System.out)
-                .writingError(System.err)
-                .usingListener(new ExecListener() {
-                    @Override
-                    public void onClose(int code, String reason) {
-                        data.complete("Done");
-                    }
-                })
+                .writingOutput(out)
+                .writingError(err)
                 .exec(command)) {
 
-            if (command[command.length - 1].trim().endsWith("&")) {
-                Thread.sleep(500);
-            } else {
-                data.get(5, TimeUnit.MINUTES);
+            int code = watch.exitCode().get(5, TimeUnit.MINUTES);
+            log.info("Exec [{}] exit={} out={}", container, code, out);
+            if (code != 0) {
+                throw new RuntimeException("Exit " + code + ": " + err);
             }
-
-            log.info("Exec output: {}", output);
-            log.error("Exec error: {}", error);
-
         } catch (Exception e) {
-            log.error("Exec failed", e);
-            throw new RuntimeException("Pod Execution Failed", e);
+            throw new RuntimeException("Pod Execution Failed: " + e.getMessage(), e);
         }
     }
 
