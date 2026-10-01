@@ -59,13 +59,19 @@ spec:
               memory: "1Gi"
 
         - name: syncer
-          image: minio/mc
+#          image: minio/mc
+          image: cgr.dev/chainguard/minio-client
 
           command:
-            - /bin/sh
-            - -c
-            - |
-              sleep infinity
+              - mc
+              - watch
+              - myminio
+#            - /bin/sh
+#            - -c
+#            - |
+#              sleep infinity
+              
+
 
           env:
             - name: MC_HOST_myminio
@@ -74,3 +80,5 @@ spec:
           volumeMounts:
             - name: workspace
               mountPath: /app
+
+
