@@ -17,7 +17,7 @@ spec:
         # ALLOW: The Shuttle Proxy (in the same namespace)
         - podSelector:
             matchLabels:
-              app: shuttle-proxy
+              app: lovable-clone-proxy
       ports:
         - protocol: TCP
           port: 5173
