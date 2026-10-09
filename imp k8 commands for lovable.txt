@@ -1,0 +1,33 @@
+to apply updated ymls->kubectl apply -f .\infra.yml;kubectl apply -f .\runner-pods.yml ;kubectl apply -f .\lovable-clone-proxy.yml;kubectl apply -f .\policy.yml                                     
+to get all pods running->kubectl get pods
+to delete all pods->kubectl delete pod --all
+to port redirection of pods to our laptop ports->kubectl port-forward pod/runner-pool-xxxxxxxxxxxx laptop_port:pod_port -n lovable-clone                                                                                           
+to see all contents of our runner container->kubectl exec runner-xxxxxxxxxxxx -n lovable-clone -c runner -- ls -la /app
+to see all contents of our syncer container->kubectl exec runner-xxxxxxxxxxxx -n lovable-clone -c syncer -- mc ls myminio/projectslovable/1/react-vite-tailwind-daisyui-starter-main/                             
+to sync contents b/w syncher and runner pod inside one runner pool->kubectl exec runner-xxxxxxxxxxxx -n lovable-clone -c syncer -- mc mirror --overwrite myminio/projectslovable/{projectId}/react-vite-tailwind-daisyui-starter-main/ /app/       
+to install the contents into runner pod after synching contents b/w syncer and runner pods->kubectl exec runner-xxxxxxxxxxxx -n lovable-clone -c runner -- sh -c "cd /app && pnpm install --reporter=append-only"                                                
+to run the react app we installed inside the runner->kubectl exec runner-xxxxxxxxxxxx -n lovable-clone -c runner -- sh -c "cd /app && pnpm run dev --host 0.0.0.0 --port 5173"                                            
+to port redirection of reverse proxy service->kubectl port-forward -n lovable-clone svc/lovable-clone-proxy-svc 8090:80
+to port redirection of redis service->kubectl port-forward svc/redis-service 6379:6379 -n lovable-clone
+
+IMP
+Adding our domain name and localhost in hosts file is mandatory for seeing the output via domain
+C:\Windows\System32\drivers\etc\hosts->in this file
+add lines like these
+127.0.0.1 project-x.app.domain.com
+and after adding run ipconfig /flushdns before accessing
+and so on should add for each and every domain as * parameter is not accepted in this hosts file 
+
+problems
+everything working find->minio official image removed->replaced with 3rd party kinda thing
+hosts file->had to mention my original host name for each project
+while migrating we should come from bottom up-->entities/dtos -> mappers ->repositories->services->then controllers for minimising the issues during migration
+
+
+In microservices project
+first we should start discovery service-then - config service first then account and api-gtw in order
+
+
+
+
+unable to add plandto from common lib to account service via jar depencdency

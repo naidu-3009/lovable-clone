@@ -1,0 +1,132 @@
+actually verify is empty but we can edit via plugin tag in pom.xml
+any stage will automatically run all previous stages
+package->creates jar in target/
+install->copies jar from target/ to c/users/.m2/repository
+deploy->deploys into jfrog/remote repo/central repo
+
+1. validate   → Check project/POM structure ->checks for any errors in pom.xml file(heart of maven)
+2. compile    → Compile main Java code (compiles all files in src/main)→ .class
+3. test-compile → Compile test Java code (compiles all files in src/test) → .class
+4. test       → Run unit tests
+5. package    → Create JAR/WAR ->and stores in target/ folder
+6. verify     → Perform final checks/verification -> actually verify runs all previous stages and if we "want" this will run activities we mentioned via plugin tag in pom file
+7. install    → Put artifact into local ~/.m2 repository->copies jar from target/ to local pc landing path/.m2repository
+8. deploy     → Upload artifact to remote Maven repository->uploads our jar file to centrl repo/remote repo(jfrog)
+9. site       → Generate project documentation/reports
+
+
+1. validate → Checks/validates the Maven project configuration, mainly `pom.xml` (the heart of Maven).
+2. compile → Compiles all main Java code in `src/main/java` → `.class` files.
+3. test-compile → Compiles all test Java code in `src/test/java` → `.class` files.
+4. test → Runs unit tests.
+5. package → Creates the final JAR/WAR and stores it in `target/`.
+6. verify → Performs final verification. By itself it may do little/nothing, but plugins can attach additional activities to this phase through `pom.xml`.
+7. install → Installs the built artifact into your local Maven repository: `C:\Users\<you>\.m2\repository` (along with POM/metadata).
+8. deploy → Uploads the artifact to a configured remote Maven repository such as JFrog/Artifactory or Nexus.
+9. site → Generates project documentation/reports.
+Golden rule: When you run any later phase, Maven automatically runs the required earlier phases(excluding clean) first. For example, `mvn package` → validate → compile → test-compile → test → package.
+
+
+
+Local m2 repo:C:\Users\T.NISHANTH NAIDU\.m2\repository\com\lovable-clone-microservices
+
+Actually verify is empty by default, but we can configure plugins to perform
+additional activities during the verify phase using the <phase>verify</phase>
+tag in pom.xml.
+
+Golden rule:
+Any stage/phase automatically runs all required previous phases in that lifecycle.
+package → creates JAR in target/
+install → installs JAR into C:\Users\T.NISHANTH NAIDU\.m2\repository\com\lovable-clone-microservices
+deploy → uploads JAR to a configured remote Maven repository such as JFrog/Artifactory or Nexus
+
+1. validate
+   → Checks/validates the Maven project configuration
+   → Mainly validates the project structure and POM configuration
+   → pom.xml = heart of Maven
+
+2. compile
+   → Compiles all main Java code in src/main/java
+   → .java → .class
+   → Output goes to target/classes/
+
+3. test-compile
+   → Compiles all test Java code in src/test/java
+   → .java → .class
+   → Output goes to target/test-classes/
+
+4. test
+   → Runs unit tests
+   → Usually using test plugins such as Maven Surefire
+
+5. package
+   → Creates the final JAR
+   → Stores the JAR inside target/
+
+6. verify
+   → Performs final verification/checks
+   → By default, it may not perform much by itself
+   → Plugins can be configured in pom.xml to perform additional
+     activities during this phase
+
+7. install
+   → Installs the built artifact into the local Maven repository
+   → Copies/installs the JAR from target/ into
+     C:\Users\T.NISHANTH NAIDU\.m2\repository\com\lovable-clone-microservices
+   → Also installs the POM and Maven metadata
+
+8. deploy
+   → Uploads the artifact to a configured remote Maven repository
+   → Example: JFrog/Artifactory, Nexus, or another remote repository
+   → NOT necessarily Maven Central
+
+9. site
+   → Generates project documentation and reports
+
+GOLDEN RULE:
+When you run any later phase, Maven automatically runs all required
+previous phases before it.
+Example
+
+mvn package
+→ validate
+→ compile
+→ test-compile
+→ test
+→ package
+
+mvn install
+→ validate
+→ compile
+→ test-compile
+→ test
+→ package
+→ verify
+→ install
+
+mvn deploy
+→ validate
+→ compile
+→ test-compile
+→ test
+→ package
+→ verify
+→ install
+→ deploy
+
+IMPORTANT:
+clean is a SEPARATE lifecycle.
+mvn clean
+→ deletes target/
+mvn clean install
+→ clean
+→ then runs the default lifecycle up to install
+For my microservices:
+
+common-library
+      ↓
+mvn clean install
+      ↓
+C:\Users\T.NISHANTH NAIDU\.m2\repository\com\lovable-clone-microservices
+      ↓
+other microservices can use the updated common-library JAR
